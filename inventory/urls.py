@@ -1,0 +1,41 @@
+from django.urls import path
+
+from .views import (
+    AgentOptionsView,
+    DashboardView,
+    LotImageUploadView,
+    InventorySummaryView,
+    LotDetailView,
+    LotListView,
+    MovementListView,
+    PromotionDecisionView,
+    PromotionListCreateView,
+    RegistrationDecisionView,
+    RegistrationDraftView,
+    RegistrationListCreateView,
+    RegistrationSubmitView,
+    StockOutDecisionView,
+    StockOutDraftView,
+    StockOutListCreateView,
+    StockOutSubmitView,
+)
+
+urlpatterns = [
+    path("dashboard/", DashboardView.as_view()),
+    path("lots/", LotListView.as_view()),
+    path("uploads/", LotImageUploadView.as_view()),
+    path("lots/<int:pk>/", LotDetailView.as_view()),
+    path("summary/", InventorySummaryView.as_view()),
+    path("movements/", MovementListView.as_view()),
+    path("agents/", AgentOptionsView.as_view()),
+    path("registrations/", RegistrationListCreateView.as_view()),
+    path("registrations/<int:pk>/", RegistrationDraftView.as_view()),
+    path("registrations/<int:pk>/submit/", RegistrationSubmitView.as_view()),
+    path("registrations/<int:pk>/decision/", RegistrationDecisionView.as_view()),
+    path("stockouts/", StockOutListCreateView.as_view()),
+    path("stockouts/<int:pk>/", StockOutDraftView.as_view()),
+    path("stockouts/<int:pk>/submit/", StockOutSubmitView.as_view()),
+    path("stockouts/<int:pk>/decision/", StockOutDecisionView.as_view()),
+    path("promotions/", PromotionListCreateView.as_view()),
+    path("promotions/<int:pk>/decision/", PromotionDecisionView.as_view()),
+]

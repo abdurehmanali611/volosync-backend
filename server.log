@@ -1,0 +1,2006 @@
+Watching for file changes with StatReloader
+Unauthorized: /api/inventory/lots/
+[30/Oct/2026 08:01:50] "GET /api/inventory/lots/ HTTP/1.1" 401 70
+C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\jwt\api_jwt.py:147: InsecureKeyLengthWarning: The HMAC key is 19 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+  return self._jws.encode(
+[30/Oct/2026 08:02:35] "POST /api/auth/login/ HTTP/1.1" 200 902
+C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\jwt\api_jwt.py:365: InsecureKeyLengthWarning: The HMAC key is 19 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+  decoded = self.decode_complete(
+[30/Oct/2026 08:02:35] "GET /api/inventory/lots/ HTTP/1.1" 200 2014
+[30/Oct/2026 08:02:35] "PATCH /api/inventory/lots/4/ HTTP/1.1" 200 532
+[30/Oct/2026 08:02:36] "PATCH /api/inventory/lots/4/ HTTP/1.1" 200 534
+[30/Oct/2026 08:02:36] "PATCH /api/inventory/lots/4/ HTTP/1.1" 200 532
+[30/Oct/2026 08:02:43] "POST /api/auth/login/ HTTP/1.1" 200 878
+[30/Oct/2026 08:02:43] "POST /api/inventory/uploads/ HTTP/1.1" 201 139
+Unauthorized: /api/auth/login/
+[30/Oct/2026 08:02:50] "POST /api/auth/login/ HTTP/1.1" 401 75
+Unauthorized: /api/sales/agents/change-password/
+[30/Oct/2026 08:02:50] "POST /api/sales/agents/change-password/ HTTP/1.1" 401 70
+[30/Oct/2026 08:05:35] "POST /api/sales/agents/login/ HTTP/1.1" 200 613
+[30/Oct/2026 08:05:51] "POST /api/sales/agents/login/ HTTP/1.1" 200 613
+Bad Request: /api/sales/agents/change-password/
+[30/Oct/2026 08:05:56] "POST /api/sales/agents/change-password/ HTTP/1.1" 400 57
+[30/Oct/2026 08:06:13] "POST /api/sales/agents/change-password/ HTTP/1.1" 200 40
+[30/Oct/2026 08:06:20] "POST /api/sales/agents/login/ HTTP/1.1" 200 614
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\config\settings.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 08:01:46
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Exception in thread django-main-thread:
+Traceback (most recent call last):
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\db\backends\mysql\base.py", line 16, in <module>
+    import MySQLdb as Database
+ModuleNotFoundError: No module named 'MySQLdb'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Program Files\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Program Files\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\utils\autoreload.py", line 64, in wrapper
+    fn(*args, **kwargs)
+    ~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\core\management\commands\runserver.py", line 124, in inner_run
+    autoreload.raise_last_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\utils\autoreload.py", line 86, in raise_last_exception
+    raise _exception[1]
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\core\management\__init__.py", line 394, in execute
+    autoreload.check_errors(django.setup)()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\utils\autoreload.py", line 64, in wrapper
+    fn(*args, **kwargs)
+    ~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\__init__.py", line 24, in setup
+    apps.populate(settings.INSTALLED_APPS)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\apps\registry.py", line 116, in populate
+    app_config.import_models()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\apps\config.py", line 269, in import_models
+    self.models_module = import_module(models_module_name)
+                         ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python314\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1398, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+  File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\contrib\auth\models.py", line 5, in <module>
+    from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\contrib\auth\base_user.py", line 43, in <module>
+    class AbstractBaseUser(models.Model):
+    ...<123 lines>...
+            )
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\db\models\base.py", line 145, in __new__
+    new_class.add_to_class("_meta", Options(meta, app_label))
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\db\models\base.py", line 373, in add_to_class
+    value.contribute_to_class(cls, name)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\db\models\options.py", line 238, in contribute_to_class
+    self.db_table, connection.ops.max_name_length()
+                   ^^^^^^^^^^^^^^
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\utils\connection.py", line 15, in __getattr__
+    return getattr(self._connections[self._alias], item)
+                   ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\utils\connection.py", line 62, in __getitem__
+    conn = self.create_connection(alias)
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\db\utils.py", line 193, in create_connection
+    backend = load_backend(db["ENGINE"])
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\db\utils.py", line 113, in load_backend
+    return import_module("%s.base" % backend_name)
+  File "C:\Program Files\Python314\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\abdur\AppData\Roaming\Python\Python314\site-packages\django\db\backends\mysql\base.py", line 18, in <module>
+    raise ImproperlyConfigured(
+        "Error loading MySQLdb module.\nDid you install mysqlclient?"
+    ) from err
+django.core.exceptions.ImproperlyConfigured: Error loading MySQLdb module.
+Did you install mysqlclient?
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\config\settings.py changed, reloading.
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 08:50:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:51:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:51:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:52:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:52:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:53:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:53:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:54:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:54:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:55:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:55:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:56:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:56:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:57:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:57:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:58:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:58:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:59:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 08:59:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:00:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:00:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:01:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:01:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:02:03] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:02:33] "GET /health HTTP/1.1" 404 3643
+[30/Oct/2026 09:03:35,910] - Broken pipe from ('127.0.0.1', 54709)
+Not Found: /health
+[30/Oct/2026 09:03:48] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:04:18] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:04:48] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:05:18] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:05:48] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:06:18] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:06:48] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:07:18] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:07:48] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:08:18] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:08:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:09:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:09:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:10:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:10:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:11:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:11:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:12:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:12:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:13:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:13:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:14:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:14:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:15:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:15:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:16:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:16:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:17:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:17:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:18:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:18:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:19:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:19:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:20:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:20:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:21:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:21:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:22:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:22:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:23:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:23:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:24:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:24:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:25:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:25:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:26:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:26:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:27:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:27:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:28:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:28:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:29:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:29:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:30:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:30:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:31:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:32:01,997] - Broken pipe from ('127.0.0.1', 55261)
+Not Found: /health
+[30/Oct/2026 09:32:25] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:32:55] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:33:25] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:33:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:34:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:34:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:35:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:35:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:36:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:36:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:37:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:37:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:38:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:38:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:39:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:39:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:40:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:40:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:41:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:41:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:42:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:42:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:43:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:43:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:44:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:44:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:45:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:45:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:46:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:46:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:47:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:47:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:48:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:48:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:49:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:49:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:50:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:50:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:51:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:51:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:52:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:52:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:53:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:53:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:54:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:54:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:55:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:55:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:56:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:56:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:57:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:57:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:58:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:58:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:59:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 09:59:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:00:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:00:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:01:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:01:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:02:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:02:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:03:30] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:04:00] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:04:30] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:05:00] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:05:30] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:06:00] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:06:30] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:07:00] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:07:30] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:08:00] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:08:30] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:09:00] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:09:30] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:10:00] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:10:30] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:11:00] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:11:30] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:12:00] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:12:30] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:13:00] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:13:30] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:14:00] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:14:30] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:15:00] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:15:30] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:16:00] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:16:31] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:17:01] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:17:31] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:18:01] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:18:31] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:19:01] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:19:31] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:20:01] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:20:31] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:21:01] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:21:31] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:22:01] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:22:31] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:23:01] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:23:31] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:24:01] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:24:31] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:25:01] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:25:31] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:26:01] "GET /health HTTP/1.1" 404 3643
+[30/Oct/2026 10:26:15] "OPTIONS /api/auth/login/ HTTP/1.1" 200 0
+Unauthorized: /api/auth/login/
+[30/Oct/2026 10:26:28] "POST /api/auth/login/ HTTP/1.1" 401 75
+Not Found: /health
+[30/Oct/2026 10:26:31] "GET /health HTTP/1.1" 404 3643
+[30/Oct/2026 10:26:47] "POST /api/auth/login/ HTTP/1.1" 200 891
+[30/Oct/2026 10:26:51] "OPTIONS /api/inventory/dashboard/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/inventory/stockouts/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/inventory/registrations/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/inventory/promotions/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/inventory/summary/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/inventory/lots/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/assets/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/sales/open-assignments/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/sales/settlements/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/hr/payroll/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/inventory/lots/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/sales/open-assignments/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/sales/settlements/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/inventory/summary/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/assets/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:51] "OPTIONS /api/hr/payroll/ HTTP/1.1" 200 0
+[30/Oct/2026 10:26:54] "GET /api/inventory/stockouts/ HTTP/1.1" 200 11
+[30/Oct/2026 10:26:55] "GET /api/inventory/promotions/ HTTP/1.1" 200 11
+[30/Oct/2026 10:26:55] "GET /api/inventory/summary/ HTTP/1.1" 200 1292
+[30/Oct/2026 10:26:55] "GET /api/inventory/lots/ HTTP/1.1" 200 1490
+[30/Oct/2026 10:26:55] "GET /api/inventory/dashboard/ HTTP/1.1" 200 213
+[30/Oct/2026 10:26:55] "GET /api/inventory/registrations/ HTTP/1.1" 200 635
+[30/Oct/2026 10:26:58] "GET /api/sales/open-assignments/ HTTP/1.1" 200 38
+[30/Oct/2026 10:26:58] "GET /api/hr/payroll/ HTTP/1.1" 200 821
+[30/Oct/2026 10:26:58] "GET /api/sales/settlements/ HTTP/1.1" 200 11
+[30/Oct/2026 10:26:58] "GET /api/inventory/stockouts/ HTTP/1.1" 200 11
+[30/Oct/2026 10:26:58] "GET /api/inventory/promotions/ HTTP/1.1" 200 11
+[30/Oct/2026 10:26:58] "GET /api/assets/ HTTP/1.1" 200 1054
+[30/Oct/2026 10:27:01] "GET /api/inventory/summary/ HTTP/1.1" 200 1292
+[30/Oct/2026 10:27:01] "GET /api/inventory/lots/ HTTP/1.1" 200 1490
+Not Found: /health
+[30/Oct/2026 10:27:02] "GET /api/hr/payroll/ HTTP/1.1" 200 821
+[30/Oct/2026 10:27:02] "GET /health HTTP/1.1" 404 3643
+[30/Oct/2026 10:27:02] "GET /api/sales/open-assignments/ HTTP/1.1" 200 38
+[30/Oct/2026 10:27:02] "GET /api/inventory/dashboard/ HTTP/1.1" 200 213
+[30/Oct/2026 10:27:02] "GET /api/inventory/registrations/ HTTP/1.1" 200 635
+[30/Oct/2026 10:27:04] "GET /api/sales/settlements/ HTTP/1.1" 200 11
+[30/Oct/2026 10:27:05] "GET /api/assets/ HTTP/1.1" 200 1054
+[30/Oct/2026 10:27:29] "GET /api/inventory/stockouts/ HTTP/1.1" 200 11
+[30/Oct/2026 10:27:29] "GET /api/inventory/lots/ HTTP/1.1" 200 1490
+[30/Oct/2026 10:27:29] "GET /api/sales/open-assignments/ HTTP/1.1" 200 38
+[30/Oct/2026 10:27:29] "GET /api/inventory/summary/ HTTP/1.1" 200 1292
+[30/Oct/2026 10:27:29] "GET /api/inventory/registrations/ HTTP/1.1" 200 635
+[30/Oct/2026 10:27:29] "GET /api/inventory/dashboard/ HTTP/1.1" 200 213
+Not Found: /health
+[30/Oct/2026 10:27:32] "GET /health HTTP/1.1" 404 3643
+[30/Oct/2026 10:27:32] "GET /api/inventory/promotions/ HTTP/1.1" 200 11
+[30/Oct/2026 10:27:32] "GET /api/sales/settlements/ HTTP/1.1" 200 11
+[30/Oct/2026 10:27:32] "GET /api/hr/payroll/ HTTP/1.1" 200 821
+[30/Oct/2026 10:27:32] "GET /api/inventory/stockouts/ HTTP/1.1" 200 11
+[30/Oct/2026 10:27:32] "GET /api/inventory/lots/ HTTP/1.1" 200 1490
+[30/Oct/2026 10:27:33] "GET /api/assets/ HTTP/1.1" 200 1054
+[30/Oct/2026 10:27:35] "GET /api/sales/open-assignments/ HTTP/1.1" 200 38
+[30/Oct/2026 10:27:35] "GET /api/inventory/summary/ HTTP/1.1" 200 1292
+[30/Oct/2026 10:27:35] "GET /api/inventory/promotions/ HTTP/1.1" 200 11
+[30/Oct/2026 10:27:36] "GET /api/inventory/registrations/ HTTP/1.1" 200 635
+[30/Oct/2026 10:27:36] "GET /api/inventory/dashboard/ HTTP/1.1" 200 213
+[30/Oct/2026 10:27:36] "GET /api/sales/settlements/ HTTP/1.1" 200 11
+[30/Oct/2026 10:27:38] "GET /api/hr/payroll/ HTTP/1.1" 200 821
+[30/Oct/2026 10:27:39] "GET /api/assets/ HTTP/1.1" 200 1054
+Not Found: /health
+[30/Oct/2026 10:28:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:28:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:29:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:29:32] "GET /health HTTP/1.1" 404 3643
+[30/Oct/2026 10:29:32] "GET /api/inventory/stockouts/ HTTP/1.1" 200 11
+[30/Oct/2026 10:29:32] "GET /api/inventory/summary/ HTTP/1.1" 200 1292
+[30/Oct/2026 10:29:32] "GET /api/sales/open-assignments/ HTTP/1.1" 200 38
+[30/Oct/2026 10:29:32] "GET /api/inventory/lots/ HTTP/1.1" 200 1490
+[30/Oct/2026 10:29:33] "GET /api/inventory/dashboard/ HTTP/1.1" 200 213
+[30/Oct/2026 10:29:33] "GET /api/inventory/registrations/ HTTP/1.1" 200 635
+[30/Oct/2026 10:29:35] "GET /api/inventory/promotions/ HTTP/1.1" 200 11
+[30/Oct/2026 10:29:35] "GET /api/sales/settlements/ HTTP/1.1" 200 11
+[30/Oct/2026 10:29:36] "GET /api/hr/payroll/ HTTP/1.1" 200 821
+[30/Oct/2026 10:29:36] "GET /api/inventory/stockouts/ HTTP/1.1" 200 11
+[30/Oct/2026 10:29:36] "GET /api/inventory/summary/ HTTP/1.1" 200 1292
+[30/Oct/2026 10:29:36] "GET /api/assets/ HTTP/1.1" 200 1054
+[30/Oct/2026 10:29:39] "GET /api/sales/open-assignments/ HTTP/1.1" 200 38
+[30/Oct/2026 10:29:39] "GET /api/inventory/lots/ HTTP/1.1" 200 1490
+[30/Oct/2026 10:29:39] "GET /api/inventory/dashboard/ HTTP/1.1" 200 213
+[30/Oct/2026 10:29:39] "GET /api/inventory/promotions/ HTTP/1.1" 200 11
+[30/Oct/2026 10:29:40] "GET /api/inventory/registrations/ HTTP/1.1" 200 635
+[30/Oct/2026 10:29:40] "GET /api/sales/settlements/ HTTP/1.1" 200 11
+[30/Oct/2026 10:29:42] "GET /api/hr/payroll/ HTTP/1.1" 200 821
+[30/Oct/2026 10:29:43] "GET /api/assets/ HTTP/1.1" 200 1054
+Not Found: /health
+[30/Oct/2026 10:30:02] "GET /health HTTP/1.1" 404 3643
+[30/Oct/2026 10:30:14] "POST /api/auth/login/ HTTP/1.1" 200 902
+[30/Oct/2026 10:30:17] "OPTIONS /api/sales/agents/ranking/ HTTP/1.1" 200 0
+[30/Oct/2026 10:30:17] "OPTIONS /api/sales/agents/ HTTP/1.1" 200 0
+[30/Oct/2026 10:30:17] "OPTIONS /api/hr/leaves/ HTTP/1.1" 200 0
+[30/Oct/2026 10:30:17] "OPTIONS /api/hr/incidents/ HTTP/1.1" 200 0
+[30/Oct/2026 10:30:17] "OPTIONS /api/sales/agents/ HTTP/1.1" 200 0
+[30/Oct/2026 10:30:17] "OPTIONS /api/sales/agents/ranking/ HTTP/1.1" 200 0
+[30/Oct/2026 10:30:20] "GET /api/inventory/stockouts/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:20] "GET /api/inventory/lots/ HTTP/1.1" 200 1490
+[30/Oct/2026 10:30:20] "GET /api/inventory/summary/ HTTP/1.1" 200 1292
+[30/Oct/2026 10:30:20] "GET /api/sales/settlements/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:20] "OPTIONS /api/hr/leaves/ HTTP/1.1" 200 0
+[30/Oct/2026 10:30:20] "OPTIONS /api/hr/incidents/ HTTP/1.1" 200 0
+[30/Oct/2026 10:30:20] "GET /api/inventory/registrations/ HTTP/1.1" 200 635
+[30/Oct/2026 10:30:20] "GET /api/inventory/dashboard/ HTTP/1.1" 200 213
+[30/Oct/2026 10:30:23] "GET /api/inventory/promotions/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:23] "GET /api/hr/payroll/ HTTP/1.1" 200 821
+[30/Oct/2026 10:30:23] "GET /api/sales/agents/ranking/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:24] "GET /api/hr/leaves/ HTTP/1.1" 200 577
+[30/Oct/2026 10:30:24] "GET /api/sales/agents/ HTTP/1.1" 200 676
+[30/Oct/2026 10:30:24] "GET /api/assets/ HTTP/1.1" 200 1054
+[30/Oct/2026 10:30:26,610] - Broken pipe from ('127.0.0.1', 57920)
+[30/Oct/2026 10:30:26,611] - Broken pipe from ('127.0.0.1', 57923)
+[30/Oct/2026 10:30:27,121] - Broken pipe from ('127.0.0.1', 57885)
+[30/Oct/2026 10:30:27,148] - Broken pipe from ('127.0.0.1', 57922)
+[30/Oct/2026 10:30:27,376] - Broken pipe from ('127.0.0.1', 57921)
+[30/Oct/2026 10:30:27,968] - Broken pipe from ('127.0.0.1', 58190)
+[30/Oct/2026 10:30:28,034] - Broken pipe from ('127.0.0.1', 57919)
+[30/Oct/2026 10:30:28,061] - Broken pipe from ('127.0.0.1', 58191)
+[30/Oct/2026 10:30:28,576] - Broken pipe from ('127.0.0.1', 58189)
+[30/Oct/2026 10:30:29] "GET /api/sales/settlements/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:29] "GET /api/inventory/summary/ HTTP/1.1" 200 1292
+[30/Oct/2026 10:30:29] "GET /api/inventory/stockouts/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:30] "GET /api/inventory/lots/ HTTP/1.1" 200 1490
+[30/Oct/2026 10:30:30] "GET /api/inventory/dashboard/ HTTP/1.1" 200 213
+[30/Oct/2026 10:30:30] "GET /api/inventory/registrations/ HTTP/1.1" 200 635
+Not Found: /health
+[30/Oct/2026 10:30:32] "GET /health HTTP/1.1" 404 3643
+[30/Oct/2026 10:30:32] "GET /api/inventory/promotions/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:33] "GET /api/sales/agents/ranking/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:33] "GET /api/hr/leaves/ HTTP/1.1" 200 577
+[30/Oct/2026 10:30:33] "GET /api/hr/payroll/ HTTP/1.1" 200 821
+[30/Oct/2026 10:30:33] "GET /api/sales/agents/ HTTP/1.1" 200 676
+[30/Oct/2026 10:30:34] "GET /api/assets/ HTTP/1.1" 200 1054
+[30/Oct/2026 10:30:35,912] - Broken pipe from ('127.0.0.1', 58201)
+[30/Oct/2026 10:30:36,159] - Broken pipe from ('127.0.0.1', 58204)
+[30/Oct/2026 10:30:36,293] - Broken pipe from ('127.0.0.1', 58192)
+[30/Oct/2026 10:30:36,582] - Broken pipe from ('127.0.0.1', 58205)
+[30/Oct/2026 10:30:36,842] - Broken pipe from ('127.0.0.1', 58202)
+[30/Oct/2026 10:30:37,703] - Broken pipe from ('127.0.0.1', 58203)
+[30/Oct/2026 10:30:38,323] - Broken pipe from ('127.0.0.1', 58237)
+[30/Oct/2026 10:30:38,347] - Broken pipe from ('127.0.0.1', 58236)
+[30/Oct/2026 10:30:38,363] - Broken pipe from ('127.0.0.1', 58239)
+[30/Oct/2026 10:30:38,372] - Broken pipe from ('127.0.0.1', 58238)
+[30/Oct/2026 10:30:38,875] - Broken pipe from ('127.0.0.1', 58235)
+[30/Oct/2026 10:30:39,350] - Broken pipe from ('127.0.0.1', 58240)
+[30/Oct/2026 10:30:39] "GET /api/inventory/summary/ HTTP/1.1" 200 1292
+[30/Oct/2026 10:30:39] "GET /api/sales/settlements/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:39] "GET /api/inventory/lots/ HTTP/1.1" 200 1490
+[30/Oct/2026 10:30:40] "GET /api/inventory/stockouts/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:40,431] - Broken pipe from ('127.0.0.1', 58252)
+[30/Oct/2026 10:30:40,489] - Broken pipe from ('127.0.0.1', 58253)
+[30/Oct/2026 10:30:43,175] - Broken pipe from ('127.0.0.1', 58255)
+[30/Oct/2026 10:30:43,178] - Broken pipe from ('127.0.0.1', 58257)
+[30/Oct/2026 10:30:43,975] - Broken pipe from ('127.0.0.1', 58272)
+[30/Oct/2026 10:30:43,980] - Broken pipe from ('127.0.0.1', 58256)
+[30/Oct/2026 10:30:44,077] - Broken pipe from ('127.0.0.1', 58273)
+[30/Oct/2026 10:30:44,202] - Broken pipe from ('127.0.0.1', 58254)
+[30/Oct/2026 10:30:44,365] - Broken pipe from ('127.0.0.1', 58274)
+[30/Oct/2026 10:30:44,592] - Broken pipe from ('127.0.0.1', 58275)
+[30/Oct/2026 10:30:45] "GET /api/inventory/lots/ HTTP/1.1" 200 1490
+[30/Oct/2026 10:30:45] "GET /api/inventory/summary/ HTTP/1.1" 200 1292
+[30/Oct/2026 10:30:45] "GET /api/sales/settlements/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:45] "GET /api/inventory/stockouts/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:45] "GET /api/inventory/dashboard/ HTTP/1.1" 200 213
+[30/Oct/2026 10:30:45] "GET /api/inventory/registrations/ HTTP/1.1" 200 635
+[30/Oct/2026 10:30:48] "GET /api/inventory/promotions/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:48] "GET /api/sales/agents/ranking/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:48] "GET /api/hr/leaves/ HTTP/1.1" 200 577
+[30/Oct/2026 10:30:48] "GET /api/hr/payroll/ HTTP/1.1" 200 821
+[30/Oct/2026 10:30:49] "GET /api/sales/agents/ HTTP/1.1" 200 676
+[30/Oct/2026 10:30:49] "GET /api/assets/ HTTP/1.1" 200 1054
+[30/Oct/2026 10:30:51] "GET /api/hr/incidents/ HTTP/1.1" 200 296
+[30/Oct/2026 10:30:51] "GET /api/inventory/lots/ HTTP/1.1" 200 1490
+[30/Oct/2026 10:30:51] "GET /api/inventory/summary/ HTTP/1.1" 200 1292
+[30/Oct/2026 10:30:51] "GET /api/sales/settlements/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:52] "GET /api/inventory/stockouts/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:52] "GET /api/inventory/dashboard/ HTTP/1.1" 200 213
+[30/Oct/2026 10:30:54] "GET /api/inventory/promotions/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:54] "GET /api/sales/agents/ranking/ HTTP/1.1" 200 11
+[30/Oct/2026 10:30:54] "GET /api/hr/leaves/ HTTP/1.1" 200 577
+[30/Oct/2026 10:30:54] "GET /api/inventory/registrations/ HTTP/1.1" 200 635
+[30/Oct/2026 10:30:55] "GET /api/hr/payroll/ HTTP/1.1" 200 821
+[30/Oct/2026 10:30:56,788] - Broken pipe from ('127.0.0.1', 58283)
+[30/Oct/2026 10:30:57,810] - Broken pipe from ('127.0.0.1', 58281)
+[30/Oct/2026 10:30:58,658] - Broken pipe from ('127.0.0.1', 58286)
+Not Found: /health
+[30/Oct/2026 10:31:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:31:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:32:02] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\user\models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 41 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, approvals, assets, auth, contenttypes, hr, inventory, sales, sessions, tenants, token_blacklist, user.
+Run 'python manage.py migrate' to apply them.
+October 30, 2026 - 08:19:06
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:32:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:33:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:33:32] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:34:02] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:34:32] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\user\serializers.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:32:25
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:35:32] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\sales\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:35:12
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:35:45
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:36:05
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:36:33] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:36:13
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\sales\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:36:48
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:37:03] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:37:00
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:37:33] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:37:25
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\sales\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:37:44
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:38:03] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\sales\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:38:00
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:38:34] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:38:13
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\sales\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:38:46
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\sales\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:38:59
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\sales\serializers.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:39:08
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:39:34] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\serializers.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:39:33
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:40:04] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:39:57
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:40:34] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:40:18
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:41:04] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:40:55
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:41:34] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:41:28
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:42:04] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:41:54
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:43:04] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:42:35
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\inventory\serializers.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:43:19
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:43:36
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:43:49
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:44:04
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\inventory\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:44:15
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:44:34] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:45:04] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\inventory\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:44:30
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\inventory\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:45:22
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\assets\models.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:45:36
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:46:26
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\assets\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:46:42
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\urls.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:47:35] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:48:05] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:48:35] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:49:05] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:49:35] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:50:05] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:50:35] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:51:05] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\sales\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+October 30, 2026 - 10:47:11
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:51:35] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\serializers.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 3 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): assets, hr, user.
+Run 'python manage.py migrate' to apply them.
+October 30, 2026 - 10:51:28
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:52:38] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 3 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): assets, hr, user.
+Run 'python manage.py migrate' to apply them.
+October 30, 2026 - 10:51:49
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:53:08] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:53:38] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:54:09] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 3 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): assets, hr, user.
+Run 'python manage.py migrate' to apply them.
+October 30, 2026 - 10:52:57
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:54:39] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 3 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): assets, hr, user.
+Run 'python manage.py migrate' to apply them.
+October 30, 2026 - 10:54:34
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:55:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:55:39] "GET /health HTTP/1.1" 404 3643
+C:\Users\abdur\Documents\Projects\volosync\BackEnd\hr\views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+You have 3 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): assets, hr, user.
+Run 'python manage.py migrate' to apply them.
+October 30, 2026 - 10:55:01
+Django version 5.2.13, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+Not Found: /health
+[30/Oct/2026 10:56:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:56:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:57:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:57:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:58:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:58:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:59:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 10:59:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:00:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:00:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:01:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:01:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:02:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:02:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:03:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:03:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:04:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:04:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:05:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:05:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:06:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:06:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:07:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:07:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:08:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:08:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:09:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:09:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:10:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:10:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:11:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:11:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:12:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:12:39] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:13:09] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:13:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:14:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:14:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:15:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:15:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:16:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:16:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:17:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:17:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:18:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:18:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:19:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:19:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:20:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:20:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:21:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:21:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:22:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:22:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:23:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:23:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:24:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:24:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:25:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:25:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:26:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:26:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:27:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:27:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:28:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:28:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:29:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:29:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:30:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:30:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:31:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:31:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:32:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:32:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:33:10] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:33:40] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:34:11] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:34:41] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:35:11] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:35:41] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:36:11] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:36:41] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:37:11] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:37:41] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:38:11] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:38:41] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:39:11] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:39:41] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:40:11] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:40:41] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:41:11] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:41:41] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:42:11] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:42:41] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:43:11] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:43:41] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:44:11] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:47:44] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:48:20] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:48:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:49:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:49:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:50:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:50:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:51:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:51:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:52:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:52:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:53:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:53:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:54:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:54:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:55:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:55:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:56:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:56:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:57:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:57:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:58:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:58:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:59:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 11:59:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 12:00:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 12:00:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 12:01:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 12:01:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 12:02:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 12:02:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 12:03:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 12:03:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 12:04:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 12:04:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 12:05:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:23:41,626] - Broken pipe from ('127.0.0.1', 59401)
+Not Found: /health
+[30/Oct/2026 14:24:47] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:25:17] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:25:47] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:26:17] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:26:48] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:27:18] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:27:48] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:28:18] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:28:48] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:29:18] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:29:48] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:30:18] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:30:48] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:31:18] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:31:48] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:32:18] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:32:48] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:33:18] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:33:48] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:34:18] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:34:49] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:35:19] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:35:49] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:36:19] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:36:49] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:37:19] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:37:49] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:38:19] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:38:49] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:39:19] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:39:50] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:40:20] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:40:50] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:41:20] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:41:50] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:42:20] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:42:50] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:43:20] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:43:50] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:44:20] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:44:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:45:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:45:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:46:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:46:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:47:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:47:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:48:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:48:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:49:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:49:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:50:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:50:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:51:21] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:51:51] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:52:22] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:52:52] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:53:22] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:53:52] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:54:22] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:54:52] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:55:22] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:55:52] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:56:22] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:56:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:57:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:57:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:58:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:58:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:59:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 14:59:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:00:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:00:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:01:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:01:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:02:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:02:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:03:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:03:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:04:23] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:04:53] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:05:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:05:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:06:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:06:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:07:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:07:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:08:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:08:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:09:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:09:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:10:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:10:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:11:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:11:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:12:24] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:12:54] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:13:25] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:13:55] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:14:25] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:14:55] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:15:25] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:15:55] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:16:25] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:16:55] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:17:25] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:17:56] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:18:26] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:18:56] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:19:26] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:19:56] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:20:26] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:20:56] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:21:26] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:21:56] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:22:26] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:22:56] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:23:26] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:23:56] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:24:26] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:24:56] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:25:26] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:25:56] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:26:27] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:26:57] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:27:27] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:27:57] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:28:27] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:28:57] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:29:27] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:29:57] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:30:27] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:30:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:31:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:31:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:32:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:32:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:33:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:33:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:34:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:34:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:35:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:35:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:36:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:36:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:37:28] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:37:58] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:38:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:38:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:39:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:39:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:40:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:40:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:41:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:41:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:42:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:42:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:43:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:43:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:44:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:44:59] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:45:29] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:49:12] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:49:42] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:50:12] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:50:42] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:51:13] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:51:43] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:52:13] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:52:43] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:53:13] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:53:43] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:54:13] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:54:43] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:55:13] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:55:43] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:56:13] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:56:43] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:57:13] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:57:44] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:58:14] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:58:44] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:59:14] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 15:59:44] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:00:14] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:00:44] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:01:14] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:01:44] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:02:14] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:02:44] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:03:14] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:03:44] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:04:14] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:04:45] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:05:15] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:05:45] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:06:15] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:06:45] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:07:15] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:07:45] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:08:15] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:08:45] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:09:15] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:09:45] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:10:15] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:10:45] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:11:15] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:11:46] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:12:16] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:12:46] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:13:16] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:13:46] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:14:16] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:14:46] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:15:16] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:15:46] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:16:16] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:16:46] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:17:16] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:17:46] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:18:16] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:18:46] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:19:17] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:19:47] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:20:17] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:20:47] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:21:17] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:21:47] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:22:17] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:22:47] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:23:17] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:23:47] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:24:17] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:24:47] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:25:17] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:25:47] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:26:17] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:26:47] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:27:17] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:27:47] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:28:17] "GET /health HTTP/1.1" 404 3643
+Not Found: /health
+[30/Oct/2026 16:28:47] "GET /health HTTP/1.1" 404 3643
+[30/Oct/2026 16:33:12,300] - Broken pipe from ('127.0.0.1', 49796)
