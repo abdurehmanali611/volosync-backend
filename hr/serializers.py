@@ -13,6 +13,7 @@ from .models import (
     ChecklistRunItem,
     ChecklistTemplate,
     ChecklistTemplateItem,
+    CompensationRequest,
     Department,
     Employee,
     HrDocument,
@@ -24,11 +25,13 @@ from .models import (
     LeaveRequest,
     LeaveType,
     OtpResetRequest,
+    PayrollAdjustment,
     PayrollEntry,
     PayrollPeriod,
     PeopleEvent,
     ShiftTemplate,
     Team,
+    WageType,
 )
 
 
@@ -238,6 +241,9 @@ class PayrollPeriodSerializer(serializers.ModelSerializer):
     counts = serializers.SerializerMethodField()
     totals = serializers.SerializerMethodField()
     payslip_count = serializers.SerializerMethodField()
+    wage_type_label = serializers.CharField(
+        source="wage_type.name", read_only=True, default=""
+    )
 
     class Meta:
         model = PayrollPeriod
@@ -255,6 +261,8 @@ class PayrollPeriodSerializer(serializers.ModelSerializer):
             "decision_note",
             "closed_by",
             "closed_at",
+            "wage_type",
+            "wage_type_label",
             "payslip_count",
             "counts",
             "totals",
@@ -373,7 +381,15 @@ class IncidentSerializer(serializers.ModelSerializer):
 class IncidentTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = IncidentType
-        fields = ["id", "code", "label", "deduct", "active"]
+        fields = [
+            "id",
+            "code",
+            "label",
+            "deduct",
+            "percent_of_salary",
+            "attendance_link",
+            "active",
+        ]
 
 
 class HrWorkflowSerializer(serializers.ModelSerializer):
@@ -448,6 +464,7 @@ class ChecklistTemplateSerializer(serializers.ModelSerializer):
     department_label = serializers.CharField(
         source="department.label", read_only=True, default=""
     )
+    team_label = serializers.CharField(source="team.label", read_only=True, default="")
 
     class Meta:
         model = ChecklistTemplate
@@ -457,6 +474,8 @@ class ChecklistTemplateSerializer(serializers.ModelSerializer):
             "name",
             "department",
             "department_label",
+            "team",
+            "team_label",
             "job_title",
             "active",
             "items",
@@ -667,3 +686,77 @@ class ChatBlockSerializer(serializers.ModelSerializer):
 
     def get_employee_b_name(self, obj):
         return obj.employee_b.full_name if obj.employee_b else "Manager"
+
+
+class WageTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WageType
+        fields = [
+            "id",
+            "code",
+            "name",
+            "frequency",
+            "min_day",
+            "to_day",
+            "active",
+        ]
+
+
+class PayrollAdjustmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PayrollAdjustment
+        fields = [
+            "id",
+            "kind",
+            "label",
+            "percent_of_salary",
+            "when_mode",
+            "salary_from",
+            "salary_to",
+            "start_ymd",
+            "end_ymd",
+            "active",
+            "created_at",
+        ]
+
+
+class CompensationRequestSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(source="employee.full_name", read_only=True)
+    employee_id = serializers.IntegerField(source="employee.id", read_only=True)
+    department_label = serializers.CharField(
+        source="employee.department.label", read_only=True, default=""
+    )
+    applied_period_key = serializers.CharField(
+        source="applied_period.period_key", read_only=True, default=""
+    )
+
+    class Meta:
+        model = CompensationRequest
+        fields = [
+            "id",
+            "employee",
+            "employee_id",
+            "employee_name",
+            "department_label",
+            "kind",
+            "amount",
+            "effective_ymd",
+            "detail",
+            "status",
+            "created_by",
+            "decided_by",
+            "decided_at",
+            "decision_note",
+            "applied_period",
+            "applied_period_key",
+            "created_at",
+        ]
+        read_only_fields = [
+            "status",
+            "created_by",
+            "decided_by",
+            "decided_at",
+            "decision_note",
+            "applied_period",
+            "created_at",
+        ]

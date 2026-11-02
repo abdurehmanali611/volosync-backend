@@ -242,6 +242,10 @@ class PayrollPeriod(models.Model):
     month_name = models.CharField(max_length=40, blank=True)
     from_ymd = models.DateField()
     to_ymd = models.DateField()
+    wage_type = models.ForeignKey(
+        "WageType", null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="payroll_periods",
+    )
     status = models.CharField(max_length=20, choices=STATUS, default="OPEN")
     created_by = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -347,7 +351,19 @@ class Incident(models.Model):
 
 
 class IncidentType(models.Model):
-    """Managed incident kind with a default salary-deduct flag (HotCol HrIncidentType)."""
+    """Managed incident kind with payroll effect and an attendance link.
+
+    deduct=True turns the incident into a payroll deduction; deduct=False makes
+    it an increment. attendance_link decides which attendance days the incident
+    is counted against (None, full absent, half day or late).
+    """
+
+    ATTENDANCE_LINKS = (
+        ("NONE", "None"),
+        ("ABSENT", "Absent days"),
+        ("HALF_DAY", "Half days"),
+        ("LATE", "Late days"),
+    )
 
     tenant = models.ForeignKey(
         Tenant, on_delete=models.CASCADE, related_name="hr_incident_types"
@@ -355,6 +371,10 @@ class IncidentType(models.Model):
     code = models.CharField(max_length=40)
     label = models.CharField(max_length=80)
     deduct = models.BooleanField(default=False)
+    percent_of_salary = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    attendance_link = models.CharField(
+        max_length=20, choices=ATTENDANCE_LINKS, default="NONE"
+    )
     active = models.BooleanField(default=True)
 
     class Meta:
@@ -411,6 +431,10 @@ class ChecklistTemplate(models.Model):
     name = models.CharField(max_length=120)
     department = models.ForeignKey(
         Department, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="checklist_templates",
+    )
+    team = models.ForeignKey(
+        Team, null=True, blank=True, on_delete=models.SET_NULL,
         related_name="checklist_templates",
     )
     job_title = models.CharField(max_length=120, blank=True)
@@ -520,6 +544,9 @@ class PeopleEvent(models.Model):
         ("transfer", "Transfer"),
         ("termination", "Termination"),
         ("disciplinary", "Disciplinary"),
+        ("performance", "Performance"),
+        ("training", "Training"),
+        ("benefits", "Benefits"),
         ("other", "Other"),
     )
     STATUS = (
@@ -739,3 +766,115 @@ class ChatBlock(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class WageType(models.Model):
+    """Payroll cycle: monthly / weekly / daily, from min_day to to_day.
+
+    Example: monthly, min_day 25, to_day 10 runs from the 25th of one month to
+    the 10th of the next.
+    """
+
+    FREQUENCIES = (("MONTHLY", "Monthly"), ("WEEKLY", "Weekly"), ("DAILY", "Daily"))
+
+    tenant = models.ForeignKey(
+        Tenant, on_delete=models.CASCADE, related_name="hr_wage_types"
+    )
+    code = models.CharField(max_length=40)
+    name = models.CharField(max_length=120)
+    frequency = models.CharField(
+        max_length=20, choices=FREQUENCIES, default="MONTHLY"
+    )
+    min_day = models.PositiveSmallIntegerField(default=1)
+    to_day = models.PositiveSmallIntegerField(default=30)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["name"]
+        unique_together = ("tenant", "code")
+
+    def __str__(self):
+        return self.name
+
+
+class PayrollAdjustment(models.Model):
+    """Common payroll deduction or increment applied to every eligible run.
+
+    when_mode ALWAYS uses the salary range (salary_from..salary_to, salary_to
+    optional). DAY_RANGE additionally narrows the run window with start/end
+    dates. percent_of_salary is the percentage of the employee's salary.
+    """
+
+    KINDS = (("DEDUCTION", "Deduction"), ("INCREMENT", "Increment"))
+    WHEN = (("ALWAYS", "Always"), ("DAY_RANGE", "Day range"))
+
+    tenant = models.ForeignKey(
+        Tenant, on_delete=models.CASCADE, related_name="hr_payroll_adjustments"
+    )
+    kind = models.CharField(max_length=20, choices=KINDS, default="DEDUCTION")
+    label = models.CharField(max_length=120)
+    percent_of_salary = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    when_mode = models.CharField(max_length=20, choices=WHEN, default="ALWAYS")
+    salary_from = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    salary_to = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True
+    )
+    start_ymd = models.DateField(null=True, blank=True)
+    end_ymd = models.DateField(null=True, blank=True)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["kind", "label"]
+
+    def __str__(self):
+        return f"{self.label} ({self.kind})"
+
+
+class CompensationRequest(models.Model):
+    """Payroll-affecting request raised by HR and decided by the Manager.
+
+    salary_change applies the new gross; advance and loan deduct once; bonus
+    and overtime add once. applied_period stops a request from being counted
+    in more than one payroll run.
+    """
+
+    KINDS = (
+        ("salary_change", "Salary change"),
+        ("advance", "Advance"),
+        ("loan", "Loan"),
+        ("bonus", "Bonus"),
+        ("overtime", "Overtime"),
+    )
+    STATUS = (
+        ("PENDING", "Pending"),
+        ("APPROVED", "Approved"),
+        ("REJECTED", "Rejected"),
+    )
+
+    tenant = models.ForeignKey(
+        Tenant, on_delete=models.CASCADE, related_name="hr_compensation_requests"
+    )
+    employee = models.ForeignKey(
+        Employee, on_delete=models.CASCADE, related_name="compensation_requests"
+    )
+    kind = models.CharField(max_length=20, choices=KINDS, default="bonus")
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    effective_ymd = models.DateField(null=True, blank=True)
+    detail = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS, default="PENDING")
+    created_by = models.CharField(max_length=255, blank=True)
+    decided_by = models.CharField(max_length=255, blank=True)
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decision_note = models.TextField(blank=True)
+    applied_period = models.ForeignKey(
+        PayrollPeriod, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="applied_compensation",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} · {self.employee} · {self.amount}"

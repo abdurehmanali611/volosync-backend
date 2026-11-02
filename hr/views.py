@@ -36,6 +36,7 @@ from .models import (
     ChecklistRun,
     ChecklistRunItem,
     ChecklistTemplate,
+    CompensationRequest,
     Department,
     Employee,
     HrDocument,
@@ -47,11 +48,13 @@ from .models import (
     LeaveRequest,
     LeaveType,
     OtpResetRequest,
+    PayrollAdjustment,
     PayrollEntry,
     PayrollPeriod,
     PeopleEvent,
     ShiftTemplate,
     Team,
+    WageType,
 )
 from .serializers import (
     AttendanceCorrectionSerializer,
@@ -63,6 +66,7 @@ from .serializers import (
     ChatThreadSerializer,
     ChecklistRunSerializer,
     ChecklistTemplateSerializer,
+    CompensationRequestSerializer,
     DepartmentSerializer,
     DocumentSerializer,
     EmployeeSerializer,
@@ -73,11 +77,13 @@ from .serializers import (
     LeaveRequestSerializer,
     LeaveTypeSerializer,
     OtpResetRequestSerializer,
+    PayrollAdjustmentSerializer,
     PayrollPeriodSerializer,
     PayrollSerializer,
     PeopleEventSerializer,
     ShiftTemplateSerializer,
     TeamSerializer,
+    WageTypeSerializer,
 )
 from .services import (
     actor,
@@ -157,6 +163,32 @@ class DepartmentListCreateView(APIView):
             leader=request.data.get("leader", ""),
         )
         return Response({"data": DepartmentSerializer(row).data}, status=201)
+
+
+class DepartmentDetailView(APIView):
+    @require_roles("HR", "MANAGER")
+    def patch(self, request, pk):
+        tenant = tenant_of(request.user)
+        row = Department.objects.filter(tenant=tenant, pk=pk).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        if request.data.get("label", "").strip():
+            row.label = request.data["label"].strip()
+        if request.data.get("code", "").strip():
+            row.code = request.data["code"].strip().upper()[:40]
+        if "leader" in request.data:
+            row.leader = request.data.get("leader", "")
+        row.save()
+        return Response({"data": DepartmentSerializer(row).data})
+
+    @require_roles("HR", "MANAGER")
+    def delete(self, request, pk):
+        tenant = tenant_of(request.user)
+        row = Department.objects.filter(tenant=tenant, pk=pk).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        row.delete()
+        return Response({"data": {"deleted": True}})
 
 
 class TeamListCreateView(APIView):
@@ -601,6 +633,9 @@ class AttendanceListCreateView(APIView):
             qs = qs.filter(day__gte=day_from)
         if day_to:
             qs = qs.filter(day__lte=day_to)
+        employee = request.query_params.get("employee")
+        if employee:
+            qs = qs.filter(employee_id=employee)
         return Response({"data": AttendanceSerializer(qs[:400], many=True).data})
 
     @require_roles("HR", "MANAGER")
@@ -705,8 +740,30 @@ class PayrollPeriodListCreateView(APIView):
         period_key = (request.data.get("period_key") or "").strip()
         from_ymd = parse_date(str(request.data.get("from_ymd") or ""))
         to_ymd = parse_date(str(request.data.get("to_ymd") or ""))
+        wage_type = (
+            WageType.objects.filter(
+                pk=request.data.get("wage_type"), tenant=tenant, active=True
+            ).first()
+            if request.data.get("wage_type")
+            else None
+        )
         if not period_key:
             period_key = today.strftime("%Y-%m")
+        if (from_ymd is None or to_ymd is None) and wage_type is not None:
+            start_day = max(1, min(int(wage_type.min_day or 1), 28))
+            end_day = max(1, min(int(wage_type.to_day or 30), 28))
+            if today.day >= start_day:
+                start_year, start_month = today.year, today.month
+            else:
+                start_year, start_month = (today.year, today.month - 1)
+                if start_month == 0:
+                    start_year, start_month = start_year - 1, 12
+            start = date(start_year, start_month, start_day)
+            end_year, end_month = start_year, start_month + 1
+            if end_month == 13:
+                end_year, end_month = end_year + 1, 1
+            from_ymd = from_ymd or start
+            to_ymd = to_ymd or date(end_year, end_month, end_day)
         if from_ymd is None or to_ymd is None:
             year, month = (period_key.split("-") + ["1"])[:2]
             try:
@@ -747,30 +804,98 @@ class PayrollPeriodListCreateView(APIView):
             .values("employee_id")
             .annotate(total=Sum("amount_etb"))
         }
+        increments = {
+            row["employee_id"]: row["total"]
+            for row in Incident.objects.filter(
+                tenant=tenant,
+                salary_deduct=False,
+                occurred_ymd__range=(from_ymd, to_ymd),
+            )
+            .values("employee_id")
+            .annotate(total=Sum("amount_etb"))
+        }
         period = PayrollPeriod.objects.create(
             tenant=tenant,
             period_key=period_key,
             month_name=request.data.get("month_name", "") or from_ymd.strftime("%B %Y"),
             from_ymd=from_ymd,
             to_ymd=to_ymd,
+            wage_type=wage_type,
             status="AWAITING_MANAGER",
             created_by=actor(request.user),
         )
-        slips = []
+        comp_requests = list(
+            CompensationRequest.objects.filter(
+                tenant=tenant, status="APPROVED", applied_period__isnull=True
+            ).filter(
+                Q(effective_ymd__isnull=True)
+                | Q(effective_ymd__range=(from_ymd, to_ymd))
+            )
+        )
+        comp_by_employee = {}
+        for req in comp_requests:
+            comp_by_employee.setdefault(req.employee_id, []).append(req)
+        adjustments = list(
+            PayrollAdjustment.objects.filter(tenant=tenant, active=True)
+        )
+        slips, applied = [], []
         for employee in employees:
-            gross = employee.salary or 0
-            deducted = deductions.get(employee.id) or 0
+            salary_value = employee.salary or Decimal("0")
+            gross = salary_value
+            added = increments.get(employee.id) or Decimal("0")
+            deducted = deductions.get(employee.id) or Decimal("0")
+            for req in comp_by_employee.get(employee.id, []):
+                amount = req.amount or Decimal("0")
+                if req.kind == "salary_change":
+                    if amount > 0:
+                        gross = amount
+                        employee.salary = amount
+                        employee.save(update_fields=["salary"])
+                elif req.kind in ("bonus", "overtime"):
+                    added += amount
+                elif req.kind in ("advance", "loan"):
+                    deducted += amount
+                req.applied_period = period
+                applied.append(req)
+            for adjustment in adjustments:
+                if salary_value < (adjustment.salary_from or 0):
+                    continue
+                if (
+                    adjustment.salary_to is not None
+                    and salary_value > adjustment.salary_to
+                ):
+                    continue
+                if adjustment.when_mode == "DAY_RANGE":
+                    if adjustment.start_ymd and adjustment.start_ymd > to_ymd:
+                        continue
+                    if adjustment.end_ymd and adjustment.end_ymd < from_ymd:
+                        continue
+                amount = (
+                    salary_value
+                    * Decimal(str(adjustment.percent_of_salary or 0))
+                    / Decimal("100")
+                ).quantize(Decimal("0.01"))
+                if adjustment.kind == "INCREMENT":
+                    added += amount
+                else:
+                    deducted += amount
+            gross_total = gross + added
+            net = gross_total - deducted
+            if net < 0:
+                net = Decimal("0")
             slips.append(
                 PayrollEntry(
                     tenant=tenant,
                     payroll_period=period,
                     employee=employee,
-                    gross=gross,
+                    gross=gross_total,
                     deductions=deducted,
-                    net=gross - deducted,
+                    net=net,
                 )
             )
         PayrollEntry.objects.bulk_create(slips)
+        if applied:
+            CompensationRequest.objects.bulk_update(applied, ["applied_period"])
         return Response({"data": _period_payload(period)}, status=201)
 
 
@@ -818,9 +943,9 @@ class PayrollPeriodDecisionView(APIView):
 
 
 class PayrollMarkPaidView(APIView):
-    """HR hands payslips to Finance; HR never finalises payment itself."""
+    """HR hands payslips to Finance; the Manager may settle runs directly."""
 
-    @require_roles("HR")
+    @require_roles("HR", "MANAGER")
     def post(self, request, pk):
         period = _payroll_period(tenant_of(request.user), pk)
         if not period:
@@ -1017,7 +1142,7 @@ class DocumentUploadView(APIView):
 
 
 class DocumentDetailView(APIView):
-    @require_roles("HR")
+    @require_roles("HR", "MANAGER")
     def delete(self, request, pk):
         tenant = tenant_of(request.user)
         row = HrDocument.objects.filter(tenant=tenant, pk=pk).first()
@@ -1078,6 +1203,18 @@ class IncidentListCreateView(APIView):
         salary_deduct = request.data.get("salary_deduct")
         if salary_deduct is None and incident_type is not None:
             salary_deduct = incident_type.deduct
+        amount = request.data.get("amount_etb") or 0
+        if (
+            not amount
+            and incident_type is not None
+            and employee is not None
+            and incident_type.percent_of_salary
+        ):
+            amount = (
+                (employee.salary or Decimal("0"))
+                * Decimal(str(incident_type.percent_of_salary))
+                / Decimal("100")
+            ).quantize(Decimal("0.01"))
         row = Incident.objects.create(
             tenant=tenant,
             employee=employee,
@@ -1086,7 +1223,7 @@ class IncidentListCreateView(APIView):
             detail=request.data.get("detail", ""),
             occurred_ymd=request.data.get("occurred_ymd"),
             salary_deduct=bool(salary_deduct),
-            amount_etb=request.data.get("amount_etb") or 0,
+            amount_etb=amount,
         )
         return Response({"data": IncidentSerializer(row).data}, status=201)
 
@@ -1455,6 +1592,8 @@ class IncidentTypeListCreateView(APIView):
             defaults={
                 "label": request.data.get("label", code.title()),
                 "deduct": bool(request.data.get("deduct")),
+                "percent_of_salary": request.data.get("percent_of_salary") or 0,
+                "attendance_link": request.data.get("attendance_link") or "NONE",
             },
         )
         if not created:
@@ -1464,6 +1603,35 @@ class IncidentTypeListCreateView(APIView):
         return Response({"data": IncidentTypeSerializer(row).data}, status=201)
 
 
+class IncidentTypeBulkCreateView(APIView):
+    """Batch incident-type creation from the Manager's Add-line editor."""
+
+    @require_roles("HR", "MANAGER")
+    def post(self, request):
+        tenant = tenant_of(request.user)
+        created, skipped = [], []
+        for item in request.data.get("types") or []:
+            label = str(item.get("label", "")).strip()
+            if not label:
+                skipped.append({"label": label, "reason": "Type name is required."})
+                continue
+            code = (item.get("code") or label).upper()[:40]
+            if IncidentType.objects.filter(tenant=tenant, code=code).exists():
+                skipped.append({"label": label, "reason": "This code already exists."})
+                continue
+            row = IncidentType.objects.create(
+                tenant=tenant,
+                code=code,
+                label=label,
+                deduct=bool(item.get("deduct", False)),
+                percent_of_salary=item.get("percent_of_salary") or 0,
+                attendance_link=item.get("attendance_link") or "NONE",
+                active=bool(item.get("active", True)),
+            )
+            created.append(IncidentTypeSerializer(row).data)
+        return Response({"data": {"created": created, "skipped": skipped}}, status=201)
+
+
 class IncidentTypeDetailView(APIView):
     @require_roles("HR", "MANAGER")
     def patch(self, request, pk):
@@ -1471,7 +1639,7 @@ class IncidentTypeDetailView(APIView):
         row = IncidentType.objects.filter(tenant=tenant, pk=pk).first()
         if not row:
             return Response({"errors": {"message": "Not found."}}, status=404)
-        for field in ["label", "deduct", "active"]:
+        for field in ["label", "deduct", "percent_of_salary", "attendance_link", "active"]:
             if field in request.data:
                 setattr(row, field, request.data[field])
         row.save()
@@ -1526,6 +1694,48 @@ class ShiftTemplateListCreateView(APIView):
             active=bool(request.data.get("active", True)),
         )
         return Response({"data": ShiftTemplateSerializer(row).data}, status=201)
+
+
+class ShiftTemplateBulkCreateView(APIView):
+    """Batch shift-template creation (Add line), sharing one default scope."""
+
+    @require_roles("HR", "MANAGER")
+    def post(self, request):
+        tenant = tenant_of(request.user)
+        department = None
+        if request.data.get("department"):
+            department = Department.objects.filter(
+                pk=request.data.get("department"), tenant=tenant
+            ).first()
+        created, skipped = [], []
+        for item in request.data.get("shifts") or []:
+            name = str(item.get("name", "")).strip()
+            if not name:
+                skipped.append({"name": name, "reason": "Shift name is required."})
+                continue
+            code = str(item.get("code") or name).upper()[:40]
+            if ShiftTemplate.objects.filter(tenant=tenant, code=code).exists():
+                skipped.append({"name": name, "reason": "This code already exists."})
+                continue
+            row = ShiftTemplate.objects.create(
+                tenant=tenant,
+                code=code,
+                name=name,
+                department=(
+                    Department.objects.filter(
+                        pk=item.get("department"), tenant=tenant
+                    ).first()
+                    if item.get("department")
+                    else department
+                ),
+                start_time=item.get("start_time") or "09:00",
+                end_time=item.get("end_time") or "17:00",
+                weekdays=item.get("weekdays") or [1, 2, 3, 4, 5],
+                note=item.get("note", ""),
+                active=bool(item.get("active", True)),
+            )
+            created.append(ShiftTemplateSerializer(row).data)
+        return Response({"data": {"created": created, "skipped": skipped}}, status=201)
 
 
 class ShiftTemplateDetailView(APIView):
@@ -1735,11 +1945,15 @@ class ChecklistTemplateListCreateView(APIView):
             department = Department.objects.filter(
                 pk=request.data.get("department"), tenant=tenant
             ).first()
+        team = None
+        if request.data.get("team"):
+            team = Team.objects.filter(pk=request.data.get("team"), tenant=tenant).first()
         row = ChecklistTemplate.objects.create(
             tenant=tenant,
             kind=request.data.get("kind") or "onboarding",
             name=name,
             department=department,
+            team=team,
             job_title=request.data.get("job_title", ""),
             active=bool(request.data.get("active", True)),
         )
@@ -1768,6 +1982,10 @@ class ChecklistTemplateDetailView(APIView):
         if "department" in request.data:
             row.department = Department.objects.filter(
                 pk=request.data.get("department"), tenant=tenant
+            ).first()
+        if "team" in request.data:
+            row.team = Team.objects.filter(
+                pk=request.data.get("team"), tenant=tenant
             ).first()
         row.save()
         if request.data.get("items") is not None:
@@ -1806,6 +2024,11 @@ class ChecklistRunListCreateView(APIView):
         status_param = request.query_params.get("status")
         if status_param:
             qs = qs.filter(status=status_param.upper())
+        day_from, day_to = _dates(request)
+        if day_from:
+            qs = qs.filter(created_at__date__gte=day_from)
+        if day_to:
+            qs = qs.filter(created_at__date__lte=day_to)
         return Response({"data": ChecklistRunSerializer(qs, many=True).data})
 
     @require_roles("HR", "MANAGER")
@@ -2753,3 +2976,297 @@ class ManagerHrDashboardView(APIView):
             "recent_terminations": recent_terminations,
         }
         return Response({"data": payload})
+
+
+class CompensationRequestListCreateView(APIView):
+    """Payroll-affecting requests: salary change, advance, loan, bonus, overtime."""
+
+    def get(self, request):
+        tenant = tenant_of(request.user)
+        qs = CompensationRequest.objects.filter(tenant=tenant).select_related(
+            "employee", "employee__department", "applied_period"
+        )
+        kind = request.query_params.get("kind")
+        if kind:
+            qs = qs.filter(kind=kind)
+        status_param = request.query_params.get("status")
+        if status_param:
+            qs = qs.filter(status=status_param.upper())
+        employee = request.query_params.get("employee")
+        if employee:
+            qs = qs.filter(employee_id=employee)
+        return Response({"data": CompensationRequestSerializer(qs, many=True).data})
+
+    @require_roles("HR", "MANAGER")
+    def post(self, request):
+        tenant = tenant_of(request.user)
+        employee = Employee.objects.filter(
+            pk=request.data.get("employee"), tenant=tenant
+        ).first()
+        if not employee:
+            return Response({"errors": {"employee": "Choose an employee."}}, status=400)
+        try:
+            amount = Decimal(str(request.data.get("amount") or 0))
+        except Exception:
+            return Response({"errors": {"amount": "Enter a valid amount."}}, status=400)
+        if amount <= 0:
+            return Response(
+                {"errors": {"amount": "Amount must be greater than zero."}}, status=400
+            )
+        row = CompensationRequest.objects.create(
+            tenant=tenant,
+            employee=employee,
+            kind=request.data.get("kind") or "bonus",
+            amount=amount,
+            effective_ymd=request.data.get("effective_ymd") or None,
+            detail=request.data.get("detail", ""),
+            created_by=actor(request.user),
+        )
+        return Response({"data": CompensationRequestSerializer(row).data}, status=201)
+
+
+class CompensationRequestDecisionView(APIView):
+    @require_roles("MANAGER")
+    def post(self, request, pk):
+        tenant = tenant_of(request.user)
+        row = CompensationRequest.objects.filter(tenant=tenant, pk=pk).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        if row.status != "PENDING":
+            return Response(
+                {"errors": {"message": "This request is already decided."}}, status=400
+            )
+        approved = (request.data.get("decision") or "").upper() == "APPROVED"
+        row.status = "APPROVED" if approved else "REJECTED"
+        row.decided_by = actor(request.user)
+        row.decided_at = timezone.now()
+        row.decision_note = request.data.get("note", "")
+        row.save()
+        notify(
+            tenant,
+            row.employee,
+            "COMPENSATION",
+            f"{row.get_kind_display()} {'approved' if approved else 'rejected'}",
+            row.decision_note or row.detail,
+            "/payslips",
+            row.status,
+        )
+        return Response({"data": CompensationRequestSerializer(row).data})
+
+
+class WageTypeListCreateView(APIView):
+    def get(self, request):
+        tenant = tenant_of(request.user)
+        return Response(
+            {
+                "data": WageTypeSerializer(
+                    WageType.objects.filter(tenant=tenant), many=True
+                ).data
+            }
+        )
+
+    @require_roles("HR", "MANAGER")
+    def post(self, request):
+        tenant = tenant_of(request.user)
+        name = str(request.data.get("name", "")).strip()
+        if not name:
+            return Response({"errors": {"name": "Wage type name is required."}}, status=400)
+        code = str(request.data.get("code") or name).upper()[:40]
+        if WageType.objects.filter(tenant=tenant, code=code).exists():
+            return Response(
+                {"errors": {"code": "This wage type already exists."}}, status=400
+            )
+        row = WageType.objects.create(
+            tenant=tenant,
+            code=code,
+            name=name,
+            frequency=request.data.get("frequency") or "MONTHLY",
+            min_day=max(1, min(int(request.data.get("min_day") or 1), 31)),
+            to_day=max(1, min(int(request.data.get("to_day") or 30), 31)),
+            active=bool(request.data.get("active", True)),
+        )
+        return Response({"data": WageTypeSerializer(row).data}, status=201)
+
+
+class WageTypeBulkCreateView(APIView):
+    @require_roles("HR", "MANAGER")
+    def post(self, request):
+        tenant = tenant_of(request.user)
+        created, skipped = [], []
+        for item in request.data.get("wage_types") or []:
+            name = str(item.get("name", "")).strip()
+            if not name:
+                skipped.append({"name": name, "reason": "Wage type name is required."})
+                continue
+            code = str(item.get("code") or name).upper()[:40]
+            if WageType.objects.filter(tenant=tenant, code=code).exists():
+                skipped.append({"name": name, "reason": "This wage type already exists."})
+                continue
+            row = WageType.objects.create(
+                tenant=tenant,
+                code=code,
+                name=name,
+                frequency=item.get("frequency") or "MONTHLY",
+                min_day=max(1, min(int(item.get("min_day") or 1), 31)),
+                to_day=max(1, min(int(item.get("to_day") or 30), 31)),
+                active=bool(item.get("active", True)),
+            )
+            created.append(WageTypeSerializer(row).data)
+        return Response({"data": {"created": created, "skipped": skipped}}, status=201)
+
+
+class WageTypeDetailView(APIView):
+    @require_roles("HR", "MANAGER")
+    def patch(self, request, pk):
+        tenant = tenant_of(request.user)
+        row = WageType.objects.filter(tenant=tenant, pk=pk).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        for field in ["name", "frequency", "active"]:
+            if field in request.data:
+                setattr(row, field, request.data[field])
+        if request.data.get("code", "").strip():
+            row.code = request.data["code"].strip().upper()[:40]
+        if "min_day" in request.data:
+            row.min_day = max(1, min(int(request.data["min_day"] or 1), 31))
+        if "to_day" in request.data:
+            row.to_day = max(1, min(int(request.data["to_day"] or 30), 31))
+        row.save()
+        return Response({"data": WageTypeSerializer(row).data})
+
+    @require_roles("HR", "MANAGER")
+    def delete(self, request, pk):
+        tenant = tenant_of(request.user)
+        row = WageType.objects.filter(tenant=tenant, pk=pk).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        row.delete()
+        return Response({"data": {"deleted": True}})
+
+
+class PayrollAdjustmentListCreateView(APIView):
+    """Common deductions and increments applied to every payroll run."""
+
+    def get(self, request):
+        tenant = tenant_of(request.user)
+        return Response(
+            {
+                "data": PayrollAdjustmentSerializer(
+                    PayrollAdjustment.objects.filter(tenant=tenant), many=True
+                ).data
+            }
+        )
+
+    @require_roles("HR", "MANAGER")
+    def post(self, request):
+        tenant = tenant_of(request.user)
+        label = str(request.data.get("label", "")).strip()
+        if not label:
+            return Response({"errors": {"label": "Label is required."}}, status=400)
+        row = PayrollAdjustment.objects.create(
+            tenant=tenant,
+            kind=(request.data.get("kind") or "DEDUCTION").upper(),
+            label=label,
+            percent_of_salary=request.data.get("percent_of_salary") or 0,
+            when_mode=(request.data.get("when_mode") or "ALWAYS").upper(),
+            salary_from=request.data.get("salary_from") or 0,
+            salary_to=request.data.get("salary_to") or None,
+            start_ymd=request.data.get("start_ymd") or None,
+            end_ymd=request.data.get("end_ymd") or None,
+            active=bool(request.data.get("active", True)),
+        )
+        return Response({"data": PayrollAdjustmentSerializer(row).data}, status=201)
+
+
+class PayrollAdjustmentBulkCreateView(APIView):
+    @require_roles("HR", "MANAGER")
+    def post(self, request):
+        tenant = tenant_of(request.user)
+        created, skipped = [], []
+        for item in request.data.get("adjustments") or []:
+            label = str(item.get("label", "")).strip()
+            if not label:
+                skipped.append({"label": label, "reason": "Label is required."})
+                continue
+            row = PayrollAdjustment.objects.create(
+                tenant=tenant,
+                kind=(item.get("kind") or "DEDUCTION").upper(),
+                label=label,
+                percent_of_salary=item.get("percent_of_salary") or 0,
+                when_mode=(item.get("when_mode") or "ALWAYS").upper(),
+                salary_from=item.get("salary_from") or 0,
+                salary_to=item.get("salary_to") or None,
+                start_ymd=item.get("start_ymd") or None,
+                end_ymd=item.get("end_ymd") or None,
+                active=bool(item.get("active", True)),
+            )
+            created.append(PayrollAdjustmentSerializer(row).data)
+        return Response({"data": {"created": created, "skipped": skipped}}, status=201)
+
+
+class PayrollAdjustmentDetailView(APIView):
+    @require_roles("HR", "MANAGER")
+    def patch(self, request, pk):
+        tenant = tenant_of(request.user)
+        row = PayrollAdjustment.objects.filter(tenant=tenant, pk=pk).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        for field in [
+            "kind",
+            "label",
+            "percent_of_salary",
+            "when_mode",
+            "salary_from",
+            "active",
+        ]:
+            if field in request.data:
+                setattr(row, field, request.data[field])
+        if "salary_to" in request.data:
+            row.salary_to = request.data.get("salary_to") or None
+        if "start_ymd" in request.data:
+            row.start_ymd = request.data.get("start_ymd") or None
+        if "end_ymd" in request.data:
+            row.end_ymd = request.data.get("end_ymd") or None
+        row.save()
+        return Response({"data": PayrollAdjustmentSerializer(row).data})
+
+    @require_roles("HR", "MANAGER")
+    def delete(self, request, pk):
+        tenant = tenant_of(request.user)
+        row = PayrollAdjustment.objects.filter(tenant=tenant, pk=pk).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        row.delete()
+        return Response({"data": {"deleted": True}})
+
+
+class PayrollHistoryView(APIView):
+    """Settled payroll lines filtered by window, employee, amount and cycle."""
+
+    @require_roles("HR", "MANAGER", "FINANCE")
+    def get(self, request):
+        tenant = tenant_of(request.user)
+        qs = PayrollEntry.objects.filter(tenant=tenant).select_related(
+            "employee", "payroll_period", "payroll_period__wage_type"
+        )
+        day_from, day_to = _dates(request)
+        if day_from:
+            qs = qs.filter(payroll_period__to_ymd__gte=day_from)
+        if day_to:
+            qs = qs.filter(payroll_period__from_ymd__lte=day_to)
+        employee = request.query_params.get("employee")
+        if employee:
+            qs = qs.filter(employee_id=employee)
+        wage_type = request.query_params.get("wage_type")
+        if wage_type:
+            qs = qs.filter(payroll_period__wage_type_id=wage_type)
+        amount_from = request.query_params.get("amount_from")
+        if amount_from:
+            qs = qs.filter(net__gte=amount_from)
+        amount_to = request.query_params.get("amount_to")
+        if amount_to:
+            qs = qs.filter(net__lte=amount_to)
+        status_param = request.query_params.get("status")
+        if status_param:
+            qs = qs.filter(status=status_param.upper())
+        return Response({"data": PayrollSerializer(qs[:400], many=True).data})
