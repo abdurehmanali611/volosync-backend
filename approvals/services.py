@@ -1,5 +1,6 @@
 """One approval machine for every document type."""
 
+from django.db import transaction
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from .models import Approval
@@ -46,28 +47,29 @@ def decide(document, actor, decision, note=""):
     if authorising_role != required_role:
         raise PermissionDenied(f"This step belongs to {required_role}.")
 
-    Approval.objects.create(
-        tenant=document.tenant,
-        entity_type=document.entity_type,
-        entity_id=document.pk,
-        step=required_role,
-        decision=decision,
-        actor=actor,
-        role=role or "",
-        note=note or "",
-    )
+    with transaction.atomic():
+        Approval.objects.create(
+            tenant=document.tenant,
+            entity_type=document.entity_type,
+            entity_id=document.pk,
+            step=required_role,
+            decision=decision,
+            actor=actor,
+            role=role or "",
+            note=note or "",
+        )
 
-    if decision == "REJECTED":
-        document.status = "REJECTED"
+        if decision == "REJECTED":
+            document.status = "REJECTED"
+            document.save(update_fields=["status"])
+            return document
+
+        if document.status == "PENDING_FINANCE":
+            document.status = "PENDING_MANAGER"
+            document.save(update_fields=["status"])
+            return document
+
+        document.apply_on_approval()
+        document.status = "APPROVED"
         document.save(update_fields=["status"])
         return document
-
-    if document.status == "PENDING_FINANCE":
-        document.status = "PENDING_MANAGER"
-        document.save(update_fields=["status"])
-        return document
-
-    document.apply_on_approval()
-    document.status = "APPROVED"
-    document.save(update_fields=["status"])
-    return document

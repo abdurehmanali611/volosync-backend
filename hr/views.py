@@ -2452,6 +2452,17 @@ class ChatBlockListCreateView(APIView):
 
 class ChatBlockDetailView(APIView):
     @require_roles("MANAGER")
+    def patch(self, request, pk):
+        tenant = tenant_of(request.user)
+        row = ChatBlock.objects.filter(tenant=tenant, pk=pk).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        if "note" in request.data:
+            row.note = str(request.data.get("note") or "")
+            row.save(update_fields=["note"])
+        return Response({"data": ChatBlockSerializer(row).data})
+
+    @require_roles("MANAGER")
     def delete(self, request, pk):
         tenant = tenant_of(request.user)
         row = ChatBlock.objects.filter(tenant=tenant, pk=pk).first()

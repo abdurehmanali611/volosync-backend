@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 
 from tenants.models import Tenant
 
@@ -86,32 +86,33 @@ class SalesSettlement(models.Model):
     def apply_on_approval(self):
         from inventory.models import StockMovement, StockLot
 
-        assignment = self.assignment
-        lot = StockLot.objects.select_for_update().get(pk=assignment.lot_id)
-        sold = self.sold_quantity
-        returned = self.returned_quantity
-        if returned:
-            lot.remaining_quantity += returned
-            lot.save(update_fields=["remaining_quantity"])
+        with transaction.atomic():
+            assignment = self.assignment
+            lot = StockLot.objects.select_for_update().get(pk=assignment.lot_id)
+            sold = self.sold_quantity
+            returned = self.returned_quantity
+            if returned:
+                lot.remaining_quantity += returned
+                lot.save(update_fields=["remaining_quantity"])
+                StockMovement.objects.create(
+                    tenant=self.tenant,
+                    lot=lot,
+                    type="SALE_RETURN",
+                    quantity_delta=returned,
+                    actor=self.entered_by,
+                    role="FINANCE",
+                    ref_type=self.entity_type,
+                    ref_id=self.pk,
+                    note="Unsold stock returned",
+                )
             StockMovement.objects.create(
                 tenant=self.tenant,
                 lot=lot,
-                type="SALE_RETURN",
-                quantity_delta=returned,
+                type="SALE",
+                quantity_delta=-sold,
                 actor=self.entered_by,
                 role="FINANCE",
                 ref_type=self.entity_type,
                 ref_id=self.pk,
-                note="Unsold stock returned",
+                note=self.payment_method,
             )
-        StockMovement.objects.create(
-            tenant=self.tenant,
-            lot=lot,
-            type="SALE",
-            quantity_delta=-sold,
-            actor=self.entered_by,
-            role="FINANCE",
-            ref_type=self.entity_type,
-            ref_id=self.pk,
-            note=self.payment_method,
-        )
