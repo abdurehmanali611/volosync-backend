@@ -3,6 +3,9 @@ from rest_framework import serializers
 from .models import (
     Attendance,
     AttendanceCorrection,
+    AtsOtp,
+    AtsOtpAudit,
+    ChatBlock,
     ChatMember,
     ChatMessage,
     ChatThread,
@@ -20,6 +23,7 @@ from .models import (
     LeaveBalance,
     LeaveRequest,
     LeaveType,
+    OtpResetRequest,
     PayrollEntry,
     PayrollPeriod,
     PeopleEvent,
@@ -590,3 +594,76 @@ class ChatThreadSerializer(serializers.ModelSerializer):
 
     def get_message_count(self, obj):
         return getattr(obj, "total_messages", None) or obj.messages.count()
+
+
+class OtpResetRequestSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(source="employee.full_name", read_only=True)
+    employee_no = serializers.CharField(source="employee.employee_no", read_only=True)
+    department_label = serializers.CharField(
+        source="employee.department.label", read_only=True, default=""
+    )
+
+    class Meta:
+        model = OtpResetRequest
+        fields = [
+            "id",
+            "employee",
+            "employee_name",
+            "employee_no",
+            "department_label",
+            "reason",
+            "status",
+            "otp_code",
+            "requested_by",
+            "decided_by",
+            "decided_at",
+            "decision_note",
+            "used_at",
+            "created_at",
+        ]
+        read_only_fields = fields[3:]
+
+
+class AtsOtpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AtsOtp
+        fields = [
+            "id",
+            "role",
+            "code",
+            "status",
+            "must_change_otp",
+            "generated_by",
+            "generated_at",
+            "used_at",
+        ]
+        read_only_fields = fields[1:]
+
+
+class AtsOtpAuditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AtsOtpAudit
+        fields = ["id", "role", "code", "action", "actor", "note", "created_at"]
+
+
+class ChatBlockSerializer(serializers.ModelSerializer):
+    employee_a_name = serializers.CharField(source="employee_a.full_name", read_only=True)
+    employee_b_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ChatBlock
+        fields = [
+            "id",
+            "employee_a",
+            "employee_a_name",
+            "employee_b",
+            "employee_b_name",
+            "note",
+            "active",
+            "created_by",
+            "created_at",
+        ]
+        read_only_fields = fields[1:]
+
+    def get_employee_b_name(self, obj):
+        return obj.employee_b.full_name if obj.employee_b else "Manager"

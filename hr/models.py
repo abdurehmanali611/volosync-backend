@@ -509,7 +509,7 @@ class HrWorkflow(models.Model):
 
     class Meta:
         ordering = ["request_type"]
-        unique_together = ("tenant", "request_type")
+        unique_together = ("tenant", "request_type", "department")
 
 
 class PeopleEvent(models.Model):
@@ -637,3 +637,105 @@ class ChatMessage(models.Model):
 
     class Meta:
         ordering = ["created_at"]
+
+
+class OtpResetRequest(models.Model):
+    """HR raises a portal OTP reset; the Manager approves and the code is issued.
+
+    The code remains visible in the Manager queue until the employee signs in
+    and replaces it (the employee portal marks the row USED).
+    """
+
+    STATUS = (
+        ("PENDING", "Pending"),
+        ("APPROVED", "Approved"),
+        ("REJECTED", "Rejected"),
+        ("USED", "Used"),
+    )
+
+    tenant = models.ForeignKey(
+        Tenant, on_delete=models.CASCADE, related_name="hr_otp_reset_requests"
+    )
+    employee = models.ForeignKey(
+        Employee, on_delete=models.CASCADE, related_name="otp_reset_requests"
+    )
+    reason = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS, default="PENDING")
+    otp_code = models.CharField(max_length=10, blank=True)
+    requested_by = models.CharField(max_length=255, blank=True)
+    decided_by = models.CharField(max_length=255, blank=True)
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decision_note = models.TextField(blank=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class AtsOtp(models.Model):
+    """Hiring-desk unlock code for the HR and Manager ATS seats.
+
+    One live code per role per tenant; every generate/reset/delete is recorded
+    in AtsOtpAudit so the Manager can see who touched which code.
+    """
+
+    ROLE = (("HR", "HR"), ("MANAGER", "Manager"))
+    STATUS = (("ACTIVE", "Active"), ("USED", "Used"), ("REVOKED", "Revoked"))
+
+    tenant = models.ForeignKey(
+        Tenant, on_delete=models.CASCADE, related_name="hr_ats_otps"
+    )
+    role = models.CharField(max_length=20, choices=ROLE, default="HR")
+    code = models.CharField(max_length=12)
+    status = models.CharField(max_length=20, choices=STATUS, default="ACTIVE")
+    must_change_otp = models.BooleanField(default=True)
+    generated_by = models.CharField(max_length=255, blank=True)
+    generated_at = models.DateTimeField(auto_now_add=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["role"]
+        unique_together = ("tenant", "role")
+
+
+class AtsOtpAudit(models.Model):
+    ACTIONS = (("CREATED", "Created"), ("RESET", "Reset"), ("DELETED", "Deleted"))
+
+    tenant = models.ForeignKey(
+        Tenant, on_delete=models.CASCADE, related_name="hr_ats_otp_audit"
+    )
+    role = models.CharField(max_length=20, choices=AtsOtp.ROLE, default="HR")
+    code = models.CharField(max_length=12, blank=True)
+    action = models.CharField(max_length=20, choices=ACTIONS, default="CREATED")
+    actor = models.CharField(max_length=255, blank=True)
+    note = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class ChatBlock(models.Model):
+    """A blocked conversation pair.
+
+    employee_b null means the employee may not message the Manager side.
+    """
+
+    tenant = models.ForeignKey(
+        Tenant, on_delete=models.CASCADE, related_name="hr_chat_blocks"
+    )
+    employee_a = models.ForeignKey(
+        Employee, on_delete=models.CASCADE, related_name="chat_blocks_started"
+    )
+    employee_b = models.ForeignKey(
+        Employee, null=True, blank=True, on_delete=models.CASCADE,
+        related_name="chat_blocks_received",
+    )
+    note = models.TextField(blank=True)
+    active = models.BooleanField(default=True)
+    created_by = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]

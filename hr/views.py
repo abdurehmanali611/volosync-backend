@@ -7,7 +7,7 @@ incidents. Both roles read everything in the module.
 import calendar
 import os
 import random
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
@@ -27,6 +27,9 @@ from inventory.views import acting_role, require_roles, role_of, tenant_of
 from .models import (
     Attendance,
     AttendanceCorrection,
+    AtsOtp,
+    AtsOtpAudit,
+    ChatBlock,
     ChatMember,
     ChatMessage,
     ChatThread,
@@ -43,6 +46,7 @@ from .models import (
     LeaveBalance,
     LeaveRequest,
     LeaveType,
+    OtpResetRequest,
     PayrollEntry,
     PayrollPeriod,
     PeopleEvent,
@@ -52,6 +56,9 @@ from .models import (
 from .serializers import (
     AttendanceCorrectionSerializer,
     AttendanceSerializer,
+    AtsOtpAuditSerializer,
+    AtsOtpSerializer,
+    ChatBlockSerializer,
     ChatMessageSerializer,
     ChatThreadSerializer,
     ChecklistRunSerializer,
@@ -65,6 +72,7 @@ from .serializers import (
     IncidentTypeSerializer,
     LeaveRequestSerializer,
     LeaveTypeSerializer,
+    OtpResetRequestSerializer,
     PayrollPeriodSerializer,
     PayrollSerializer,
     PeopleEventSerializer,
@@ -1574,7 +1582,9 @@ class WorkflowListCreateView(APIView):
                 pk=request.data.get("department"), tenant=tenant
             ).first()
         row = HrWorkflow.objects.filter(
-            tenant=tenant, request_type=request_type
+            tenant=tenant,
+            request_type=request_type,
+            department=department,
         ).first()
         if row is None:
             row = HrWorkflow(tenant=tenant, request_type=request_type)
@@ -2092,6 +2102,22 @@ class ManagerApprovalQueueView(APIView):
                     "payload": PeopleEventSerializer(row).data,
                 }
             )
+        for row in OtpResetRequest.objects.filter(
+            tenant=tenant, status="PENDING"
+        ).select_related("employee"):
+            items.append(
+                {
+                    "type": "otp_reset",
+                    "id": row.id,
+                    "employee_id": row.employee_id,
+                    "employee_name": row.employee.full_name,
+                    "title": f"Portal OTP reset · {row.employee.full_name}",
+                    "detail": row.reason,
+                    "status": row.status,
+                    "created_at": row.created_at,
+                    "payload": OtpResetRequestSerializer(row).data,
+                }
+            )
         for row in ChecklistRun.objects.filter(tenant=tenant, status="COMPLETED").select_related("employee"):
             items.append(
                 {
@@ -2113,3 +2139,606 @@ class ManagerApprovalQueueView(APIView):
             for item in items
         ]
         return Response({"data": {"count": len(payload), "items": payload, "role": role_of(request.user), "who": who}})
+
+
+def _new_portal_otp():
+    return f"{random.randint(0, 999999):06d}"
+
+
+class OtpResetListCreateView(APIView):
+    """HR raises portal OTP reset requests; the Manager decides them."""
+
+    @require_roles("HR", "MANAGER")
+    def get(self, request):
+        tenant = tenant_of(request.user)
+        rows = OtpResetRequest.objects.filter(tenant=tenant).select_related(
+            "employee", "employee__department"
+        )
+        if request.query_params.get("queue") == "1":
+            rows = rows.filter(status__in=["PENDING", "APPROVED"])
+        status_param = request.query_params.get("status")
+        if status_param:
+            rows = rows.filter(status=status_param.upper())
+        return Response({"data": OtpResetRequestSerializer(rows[:200], many=True).data})
+
+    @require_roles("HR")
+    def post(self, request):
+        tenant = tenant_of(request.user)
+        employee = Employee.objects.filter(
+            tenant=tenant, pk=request.data.get("employee")
+        ).first()
+        if not employee:
+            return Response(
+                {"errors": {"employee": "Choose an employee."}}, status=400
+            )
+        if employee.status == "TERMINATED":
+            return Response(
+                {"errors": {"employee": "This employee has left the roster."}},
+                status=400,
+            )
+        open_request = OtpResetRequest.objects.filter(
+            tenant=tenant, employee=employee, status__in=["PENDING", "APPROVED"]
+        ).exists()
+        if open_request:
+            return Response(
+                {
+                    "errors": {
+                        "message": "This employee already has an open OTP reset request."
+                    }
+                },
+                status=400,
+            )
+        row = OtpResetRequest.objects.create(
+            tenant=tenant,
+            employee=employee,
+            reason=request.data.get("reason", ""),
+            requested_by=actor(request.user),
+        )
+        return Response({"data": OtpResetRequestSerializer(row).data}, status=201)
+
+
+class OtpResetDecisionView(APIView):
+    """Manager approval issues the actual portal code."""
+
+    @require_roles("MANAGER")
+    def post(self, request, pk):
+        tenant = tenant_of(request.user)
+        row = OtpResetRequest.objects.filter(
+            tenant=tenant, pk=pk, status="PENDING"
+        ).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        approved = (request.data.get("decision") or "").upper() == "APPROVED"
+        who = actor(request.user)
+        note = request.data.get("note", "")
+        if approved:
+            otp = _new_portal_otp()
+            employee = row.employee
+            employee.portal_otp = otp
+            employee.must_change_otp = True
+            employee.otp_reset_by = who
+            employee.otp_reset_at = timezone.now()
+            employee.save(
+                update_fields=[
+                    "portal_otp",
+                    "must_change_otp",
+                    "otp_reset_by",
+                    "otp_reset_at",
+                ]
+            )
+            row.status = "APPROVED"
+            row.otp_code = otp
+            notify(
+                tenant,
+                employee,
+                "PORTAL",
+                "Portal access code approved",
+                "Your reset was approved. Sign in with the code from your manager and set a new one.",
+                "/change-otp",
+                "APPROVED",
+            )
+        else:
+            row.status = "REJECTED"
+            notify(
+                tenant,
+                row.employee,
+                "PORTAL",
+                "Portal access reset declined",
+                note or "Ask HR if you still need a new code.",
+                "/home",
+                "REJECTED",
+            )
+        row.decided_by = who
+        row.decided_at = timezone.now()
+        row.decision_note = note
+        row.save(
+            update_fields=[
+                "status",
+                "otp_code",
+                "decided_by",
+                "decided_at",
+                "decision_note",
+            ]
+        )
+        return Response({"data": OtpResetRequestSerializer(row).data})
+
+
+def _ats_code():
+    alphabet = string.ascii_uppercase + string.digits
+    return "ATS" + "".join(secrets.choice(alphabet) for _ in range(5))
+
+
+def _ats_role(value):
+    role = (value or "HR").upper()
+    return role if role in ("HR", "MANAGER") else "HR"
+
+
+class AtsOtpListCreateView(APIView):
+    """Hiring-desk unlock codes for the HR and Manager ATS seats."""
+
+    @require_roles("MANAGER")
+    def get(self, request):
+        tenant = tenant_of(request.user)
+        rows = AtsOtp.objects.filter(tenant=tenant)
+        status_param = (request.query_params.get("status") or "ACTIVE").upper()
+        if status_param != "ALL":
+            rows = rows.filter(status=status_param)
+        return Response({"data": AtsOtpSerializer(rows, many=True).data})
+
+    @require_roles("MANAGER")
+    def post(self, request):
+        tenant = tenant_of(request.user)
+        role = _ats_role(request.data.get("role"))
+        existing = AtsOtp.objects.filter(tenant=tenant, role=role).first()
+        if existing and existing.status == "ACTIVE":
+            return Response(
+                {
+                    "errors": {
+                        "message": f"An active {role.lower()} code already exists — reset it instead."
+                    }
+                },
+                status=400,
+            )
+        code = _ats_code()
+        if existing:
+            AtsOtp.objects.filter(pk=existing.pk).update(
+                code=code,
+                status="ACTIVE",
+                must_change_otp=True,
+                generated_by=actor(request.user),
+                generated_at=timezone.now(),
+                used_at=None,
+            )
+            row = AtsOtp.objects.get(pk=existing.pk)
+        else:
+            row = AtsOtp.objects.create(
+                tenant=tenant,
+                role=role,
+                code=code,
+                generated_by=actor(request.user),
+            )
+        AtsOtpAudit.objects.create(
+            tenant=tenant,
+            role=role,
+            code=code,
+            action="CREATED",
+            actor=actor(request.user),
+        )
+        return Response({"data": AtsOtpSerializer(row).data}, status=201)
+
+
+class AtsOtpResetView(APIView):
+    @require_roles("MANAGER")
+    def post(self, request, pk):
+        tenant = tenant_of(request.user)
+        row = AtsOtp.objects.filter(tenant=tenant, pk=pk).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        code = _ats_code()
+        AtsOtp.objects.filter(pk=row.pk).update(
+            code=code,
+            status="ACTIVE",
+            must_change_otp=True,
+            generated_by=actor(request.user),
+            generated_at=timezone.now(),
+            used_at=None,
+        )
+        row.refresh_from_db()
+        AtsOtpAudit.objects.create(
+            tenant=tenant,
+            role=row.role,
+            code=code,
+            action="RESET",
+            actor=actor(request.user),
+        )
+        return Response({"data": AtsOtpSerializer(row).data})
+
+
+class AtsOtpDetailView(APIView):
+    @require_roles("MANAGER")
+    def delete(self, request, pk):
+        tenant = tenant_of(request.user)
+        row = AtsOtp.objects.filter(tenant=tenant, pk=pk).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        AtsOtpAudit.objects.create(
+            tenant=tenant,
+            role=row.role,
+            code=row.code,
+            action="DELETED",
+            actor=actor(request.user),
+            note=request.query_params.get("note", ""),
+        )
+        row.delete()
+        return Response({"data": {"deleted": True}})
+
+
+class AtsOtpAuditView(APIView):
+    @require_roles("MANAGER")
+    def get(self, request):
+        tenant = tenant_of(request.user)
+        rows = AtsOtpAudit.objects.filter(tenant=tenant)
+        role = request.query_params.get("role")
+        if role:
+            rows = rows.filter(role=role.upper())
+        return Response({"data": AtsOtpAuditSerializer(rows[:200], many=True).data})
+
+
+class ChatBlockListCreateView(APIView):
+    """Blocked chat pairs; supports a batch of pairs in one call."""
+
+    @require_roles("MANAGER")
+    def get(self, request):
+        tenant = tenant_of(request.user)
+        rows = ChatBlock.objects.filter(tenant=tenant).select_related(
+            "employee_a", "employee_b"
+        )
+        if request.query_params.get("all") != "1":
+            rows = rows.filter(active=True)
+        return Response({"data": ChatBlockSerializer(rows[:300], many=True).data})
+
+    @require_roles("MANAGER")
+    def post(self, request):
+        tenant = tenant_of(request.user)
+        payload = request.data.get("blocks")
+        if payload is None:
+            payload = [request.data]
+        if not isinstance(payload, list) or not payload:
+            return Response(
+                {"errors": {"blocks": "Send at least one block."}}, status=400
+            )
+        who = actor(request.user)
+        created = []
+        skipped = []
+        for entry in payload:
+            employee_a = Employee.objects.filter(
+                tenant=tenant, pk=entry.get("employee_a")
+            ).first()
+            if not employee_a:
+                skipped.append({**entry, "reason": "Pick employee A."})
+                continue
+            employee_b = None
+            if entry.get("employee_b"):
+                employee_b = Employee.objects.filter(
+                    tenant=tenant, pk=entry.get("employee_b")
+                ).first()
+                if not employee_b:
+                    skipped.append({**entry, "reason": "Employee B not found."})
+                    continue
+                if employee_b.pk == employee_a.pk:
+                    skipped.append({**entry, "reason": "Pick two different employees."})
+                    continue
+            duplicate = ChatBlock.objects.filter(
+                tenant=tenant,
+                employee_a=employee_a,
+                employee_b=employee_b,
+                active=True,
+            ).exists()
+            if duplicate:
+                skipped.append({**entry, "reason": "Already blocked."})
+                continue
+            row = ChatBlock.objects.create(
+                tenant=tenant,
+                employee_a=employee_a,
+                employee_b=employee_b,
+                note=entry.get("note", request.data.get("note", "")),
+                created_by=who,
+            )
+            created.append(ChatBlockSerializer(row).data)
+        return Response(
+            {"data": {"created": created, "skipped": skipped}}, status=201
+        )
+
+
+class ChatBlockDetailView(APIView):
+    @require_roles("MANAGER")
+    def delete(self, request, pk):
+        tenant = tenant_of(request.user)
+        row = ChatBlock.objects.filter(tenant=tenant, pk=pk).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        row.delete()
+        return Response({"data": {"deleted": True}})
+
+
+class ChatHistoryView(APIView):
+    """Read-only transcript search across direct, group and manager threads."""
+
+    @require_roles("MANAGER")
+    def get(self, request):
+        tenant = tenant_of(request.user)
+        rows = ChatMessage.objects.filter(thread__tenant=tenant).select_related(
+            "thread", "sender"
+        )
+        day_from = parse_date(request.query_params.get("from") or "")
+        day_to = parse_date(request.query_params.get("to") or "")
+        if day_from:
+            rows = rows.filter(created_at__date__gte=day_from)
+        if day_to:
+            rows = rows.filter(created_at__date__lte=day_to)
+        employee = request.query_params.get("employee")
+        if employee:
+            rows = rows.filter(thread__members__employee_id=employee).distinct()
+        thread_type = (request.query_params.get("thread_type") or "ALL").upper()
+        if thread_type == "DIRECT":
+            rows = rows.filter(thread__kind__in=["DIRECT", "MANAGER"])
+        elif thread_type == "GROUP":
+            rows = rows.filter(thread__kind="GROUP")
+        manager_filter = (request.query_params.get("manager") or "ALL").upper()
+        if manager_filter in ("WITH", "INCL"):
+            rows = rows.filter(thread__members__is_manager=True).distinct()
+        elif manager_filter in ("EMP_ONLY", "EMPLOYEES"):
+            rows = rows.exclude(thread__members__is_manager=True)
+        payload = []
+        for row in rows.order_by("-created_at")[:500]:
+            payload.append(
+                {
+                    "id": row.id,
+                    "thread": row.thread_id,
+                    "thread_title": row.thread.title,
+                    "thread_kind": row.thread.kind,
+                    "sender": row.sender_id,
+                    "sender_name": row.sender_name
+                    or (row.sender.full_name if row.sender else "Manager"),
+                    "sender_is_manager": row.sender_is_manager,
+                    "body": row.body,
+                    "image_url": row.image_url,
+                    "created_at": row.created_at.isoformat(),
+                }
+            )
+        return Response({"data": payload})
+
+
+class TeamBulkCreateView(APIView):
+    """Create many teams at once; duplicate codes are reported, not fatal."""
+
+    @require_roles("MANAGER")
+    def post(self, request):
+        tenant = tenant_of(request.user)
+        payload = request.data.get("teams")
+        if not isinstance(payload, list) or not payload:
+            return Response(
+                {"errors": {"teams": "Send at least one team."}}, status=400
+            )
+        created = []
+        skipped = []
+        for entry in payload:
+            code = (
+                entry.get("code") or entry.get("label", "")
+            ).strip().upper()[:40]
+            label = (entry.get("label") or "").strip()
+            if not code or not label:
+                skipped.append({**entry, "reason": "Code and label are required."})
+                continue
+            if Team.objects.filter(tenant=tenant, code=code).exists():
+                skipped.append({**entry, "reason": "Code already exists."})
+                continue
+            department = None
+            department_id = entry.get("department") or request.data.get("department")
+            if department_id:
+                department = Department.objects.filter(
+                    pk=department_id, tenant=tenant
+                ).first()
+            row = Team.objects.create(
+                tenant=tenant,
+                code=code,
+                label=label,
+                leader=entry.get("leader", ""),
+                department=department,
+                active=True,
+            )
+            created.append(TeamSerializer(row).data)
+        return Response(
+            {"data": {"created": created, "skipped": skipped}}, status=201
+        )
+
+
+class LeaveTypeBulkCreateView(APIView):
+    @require_roles("MANAGER")
+    def post(self, request):
+        tenant = tenant_of(request.user)
+        payload = request.data.get("types")
+        if not isinstance(payload, list) or not payload:
+            return Response(
+                {"errors": {"types": "Send at least one leave type."}}, status=400
+            )
+        created = []
+        skipped = []
+        for entry in payload:
+            label = (entry.get("label") or "").strip()
+            if not label:
+                skipped.append({**entry, "reason": "Label is required."})
+                continue
+            code = (entry.get("code") or label).strip().upper()[:40]
+            if LeaveType.objects.filter(tenant=tenant, code=code).exists():
+                skipped.append({**entry, "reason": "Code already exists."})
+                continue
+            row = LeaveType.objects.create(
+                tenant=tenant,
+                code=code,
+                label=label,
+                paid=bool(entry.get("paid", True)),
+                quota_days=entry.get("quota_days") or 0,
+                active=True,
+            )
+            created.append(LeaveTypeSerializer(row).data)
+        return Response(
+            {"data": {"created": created, "skipped": skipped}}, status=201
+        )
+
+
+class ManagerHrDashboardView(APIView):
+    """Reporting payload behind the Manager HR dashboard."""
+
+    @require_roles("MANAGER")
+    def get(self, request):
+        tenant = tenant_of(request.user)
+        today = date.today()
+        year_start = date(today.year, 1, 1)
+        employees = Employee.objects.filter(tenant=tenant)
+
+        by_department = list(
+            employees.values("department__label")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+        departments = [
+            {
+                "label": row["department__label"] or "Unassigned",
+                "count": row["count"],
+            }
+            for row in by_department
+        ]
+
+        start = today - timedelta(days=13)
+        attendance_rows = {
+            row["day"]: row
+            for row in Attendance.objects.filter(
+                tenant=tenant, day__gte=start, day__lte=today
+            )
+            .values("day")
+            .annotate(
+                total=Count("id"),
+                present=Count(
+                    "id", filter=Q(status__in=["PRESENT", "LATE", "HALF_DAY"])
+                ),
+                late=Count("id", filter=Q(status="LATE")),
+                absent=Count("id", filter=Q(status="ABSENT")),
+            )
+        }
+        attendance = []
+        for offset in range(14):
+            day = start + timedelta(days=offset)
+            row = attendance_rows.get(day, {})
+            attendance.append(
+                {
+                    "day": day.isoformat(),
+                    "total": row.get("total", 0),
+                    "present": row.get("present", 0),
+                    "late": row.get("late", 0),
+                    "absent": row.get("absent", 0),
+                }
+            )
+
+        leave_labels = {
+            row.code: row.label for row in LeaveType.objects.filter(tenant=tenant)
+        }
+        leave_usage = [
+            {
+                "code": row["leave_type"],
+                "label": leave_labels.get(row["leave_type"], row["leave_type"]),
+                "days": float(row["days"] or 0),
+            }
+            for row in LeaveRequest.objects.filter(
+                tenant=tenant,
+                status="APPROVED",
+                from_ymd__gte=year_start,
+            )
+            .values("leave_type")
+            .annotate(days=Sum("days"))
+            .order_by("-days")
+        ]
+
+        latest_period = (
+            PayrollPeriod.objects.filter(tenant=tenant)
+            .order_by("-from_ymd", "-id")
+            .first()
+        )
+        payroll = None
+        if latest_period:
+            totals = PayrollEntry.objects.filter(
+                payroll_period=latest_period
+            ).aggregate(
+                gross=Sum("gross"), deductions=Sum("deductions"), net=Sum("net")
+            )
+            payroll = {
+                "id": latest_period.id,
+                "period_key": latest_period.period_key,
+                "status": latest_period.status,
+                "payslips": latest_period.payslips.count(),
+                "gross": str(totals["gross"] or 0),
+                "deductions": str(totals["deductions"] or 0),
+                "net": str(totals["net"] or 0),
+            }
+
+        recent_terminations = [
+            {
+                "id": row.id,
+                "employee": row.employee.full_name,
+                "effective_ymd": row.effective_ymd.isoformat()
+                if row.effective_ymd
+                else None,
+                "status": row.status,
+            }
+            for row in PeopleEvent.objects.filter(
+                tenant=tenant, kind="termination"
+            )
+            .select_related("employee")
+            .order_by("-created_at")[:5]
+        ]
+
+        status_counts = {
+            row["status"]: row["count"]
+            for row in employees.values("status").annotate(count=Count("id"))
+        }
+
+        payload = {
+            "headcount": employees.count(),
+            "active": status_counts.get("ACTIVE", 0),
+            "on_leave": status_counts.get("ON_LEAVE", 0),
+            "terminated": status_counts.get("TERMINATED", 0),
+            "departments": departments,
+            "attendance": attendance,
+            "leave_usage": leave_usage,
+            "payroll": payroll,
+            "pending": {
+                "terminations": PeopleEvent.objects.filter(
+                    tenant=tenant, kind="termination", status="PENDING"
+                ).count(),
+                "attendance": AttendanceCorrection.objects.filter(
+                    tenant=tenant, status="PENDING"
+                ).count(),
+                "payroll": PayrollPeriod.objects.filter(
+                    tenant=tenant, status="AWAITING_MANAGER"
+                ).count(),
+                "otp_resets": OtpResetRequest.objects.filter(
+                    tenant=tenant, status="PENDING"
+                ).count(),
+                "otp_issued": OtpResetRequest.objects.filter(
+                    tenant=tenant, status="APPROVED"
+                ).count(),
+            },
+            "otp": {
+                "portal_ready": employees.exclude(portal_otp="").count(),
+                "first_login_pending": employees.filter(must_change_otp=True).count(),
+                "ats_active": AtsOtp.objects.filter(
+                    tenant=tenant, status="ACTIVE"
+                ).count(),
+                "resets_30d": OtpResetRequest.objects.filter(
+                    tenant=tenant,
+                    created_at__date__gte=today - timedelta(days=30),
+                ).count(),
+            },
+            "recent_terminations": recent_terminations,
+        }
+        return Response({"data": payload})
