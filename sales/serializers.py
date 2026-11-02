@@ -74,6 +74,7 @@ class SalesSettlementSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "returned_quantity",
             "expected_amount",
+            "sales_amount",
             "status",
             "entered_by",
             "created_at",

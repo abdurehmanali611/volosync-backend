@@ -334,10 +334,12 @@ class SettlementListCreateView(APIView):
                 status=400,
             )
         role = role_of(request.user)
+        expected = (unit_price * sold).quantize(Decimal("0.01"))
         settlement = serializer.save(
             tenant=tenant,
             returned_quantity=assignment.quantity - sold,
-            expected_amount=(unit_price * sold).quantize(Decimal("0.01")),
+            sales_amount=expected,
+            expected_amount=expected,
             entered_by=request.user,
             status="PENDING_FINANCE" if role == "SALES" else "PENDING_MANAGER",
         )
