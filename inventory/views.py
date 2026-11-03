@@ -38,12 +38,28 @@ from .serializers import (
 )
 
 
+def agent_login(user):
+    """The sales agent record behind a login, if this user is one.
+
+    Agents sign in with their own credentials against the tenant's shared Sales
+    username, so the record — not the Access profile — says who they are.
+    """
+    return SalesAgent.objects.filter(user=user).select_related("tenant").first()
+
+
 def role_of(user):
-    return getattr(getattr(user, "profile", None), "role", None)
+    role = getattr(getattr(user, "profile", None), "role", None)
+    if role:
+        return role
+    return "SALES" if hasattr(user, "sales_agent") else None
 
 
 def tenant_of(user):
-    return getattr(getattr(user, "profile", None), "tenant", None)
+    tenant = getattr(getattr(user, "profile", None), "tenant", None)
+    if tenant:
+        return tenant
+    agent = agent_login(user)
+    return agent.tenant if agent else None
 
 
 def _create_registration_lines(doc, tenant, lines):

@@ -45,15 +45,10 @@ def sales_access_profile(tenant):
 def visible_agent_ids(user):
     """Agent rows the caller acts on; ``None`` means every agent in the tenant.
 
-    The tenant's shared Sales account oversees the whole team, so stock raised
-    for any agent shows up for it. Only a legacy per-agent login — one that is
-    not that Access account — stays pinned to its own rows.
+    An agent signing in with their own credentials settles only their own stock.
+    The tenant's shared Access Sales account has no agent row of its own, so it
+    keeps overseeing the whole team.
     """
-    if role_of(user) != "SALES":
-        return None
-    access = sales_access_profile(tenant_of(user))
-    if access and access.user_id == user.id:
-        return None
     own = SalesAgent.objects.filter(user=user).values_list("id", flat=True).first()
     return [own] if own else None
 
@@ -287,12 +282,11 @@ class SettlementListCreateView(APIView):
         qs = SalesSettlement.objects.filter(tenant=tenant).select_related(
             "assignment__sales_agent", "assignment__lot__item", "entered_by"
         )
-        if role_of(request.user) == "SALES":
-            # The shared Sales login oversees every agent; a legacy per-agent
-            # login keeps seeing only its own settlements.
-            agent_ids = visible_agent_ids(request.user)
-            if agent_ids:
-                qs = qs.filter(assignment__sales_agent_id__in=agent_ids)
+        # An agent login sees its own settlements; everyone else in the tenant
+        # (Finance, Manager, the shared Sales oversight login) sees the team's.
+        agent_ids = visible_agent_ids(request.user)
+        if agent_ids:
+            qs = qs.filter(assignment__sales_agent_id__in=agent_ids)
         if request.query_params.get("queue") == "1":
             wanted = {"FINANCE": "PENDING_FINANCE", "MANAGER": "PENDING_MANAGER"}.get(
                 role_of(request.user)
@@ -328,6 +322,13 @@ class SettlementListCreateView(APIView):
         assignment = serializer.validated_data["assignment"]
         if assignment.request.tenant_id != tenant.id:
             return Response({"errors": {"message": "Not found."}}, status=404)
+        # An agent settles their own handovers only — never a colleague's.
+        agent_ids = visible_agent_ids(request.user)
+        if agent_ids and assignment.sales_agent_id not in agent_ids:
+            return Response(
+                {"errors": {"assignment": "This stock is not assigned to you."}},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         if assignment.request.status != "APPROVED":
             return Response(
                 {"errors": {"assignment": "This assignment is not approved yet."}},
@@ -409,7 +410,7 @@ class OpenAssignmentListView(APIView):
             .select_related("lot__item", "sales_agent", "request")
             .order_by("lot__item__name")
         )
-        # A legacy per-agent login only ever sees its own stock.
+        # An agent login only ever sees its own stock.
         agent_ids = visible_agent_ids(request.user)
         if agent_ids:
             rows = rows.filter(sales_agent_id__in=agent_ids)
