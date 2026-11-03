@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -6,6 +7,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from .models import NoticeAck
 from .serializers import CustomTokenObtainPairSerializer, UserSerializer
 
 User = get_user_model()
@@ -200,3 +202,39 @@ class StaffAccessDetailView(APIView):
         username = profile.user.username
         profile.user.delete()
         return Response({"data": {"id": pk, "username": username, "deleted": True}})
+
+
+class NoticeAckView(APIView):
+    """Read watermarks for the bell's queue notifications."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        rows = NoticeAck.objects.filter(user=request.user)
+        return Response(
+            {"data": [{"key": row.key, "count": row.count} for row in rows]}
+        )
+
+    def post(self, request):
+        items = request.data.get("items")
+        if not isinstance(items, list):
+            return Response(
+                {"errors": {"items": "Send a list of {key, count}."}}, status=400
+            )
+        saved = []
+        with transaction.atomic():
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                key = str(item.get("key", ""))[:80]
+                if not key:
+                    continue
+                try:
+                    count = max(0, int(item.get("count") or 0))
+                except (TypeError, ValueError):
+                    count = 0
+                NoticeAck.objects.update_or_create(
+                    user=request.user, key=key, defaults={"count": count}
+                )
+                saved.append({"key": key, "count": count})
+        return Response({"data": saved})

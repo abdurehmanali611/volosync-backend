@@ -364,6 +364,23 @@ class SettlementDecisionView(APIView):
         settlement = SalesSettlement.objects.filter(tenant=tenant, pk=pk).first()
         if not settlement:
             return Response({"errors": {"message": "Not found."}}, status=404)
+        # The agent's penalty tick is a declaration; Finance owns the verdict,
+        # and a penalty only makes sense when stock came back unsold.
+        if "penalty" in request.data and settlement.status == "PENDING_FINANCE":
+            penalty_on = request.data.get("penalty") is True or str(
+                request.data.get("penalty")
+            ).lower() in {"1", "true", "yes"}
+            if penalty_on and settlement.returned_quantity <= 0:
+                return Response(
+                    {
+                        "errors": {
+                            "penalty": "A penalty needs unsold remainings on this sale."
+                        }
+                    },
+                    status=400,
+                )
+            settlement.penalty = penalty_on
+            settlement.save(update_fields=["penalty"])
         decide(
             settlement,
             request.user,

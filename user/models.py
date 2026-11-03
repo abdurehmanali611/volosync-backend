@@ -32,6 +32,29 @@ class Profile(models.Model):
         return f"{self.user.username} ({self.role})"
 
 
+class NoticeAck(models.Model):
+    """Per-user read watermark for a synthesised bell notification.
+
+    Queue notices are recomputed on every poll, so acknowledging stores the
+    count that was read; the notice turns unread again once the queue grows.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notice_acks"
+    )
+    key = models.CharField(max_length=80)
+    count = models.PositiveIntegerField(default=0)
+    read_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "key"], name="unique_notice_ack")
+        ]
+
+    def __str__(self):
+        return f"{self.user_id} · {self.key} · {self.count}"
+
+
 class LoginAttempt(models.Model):
     """R2 guardrail: an audit row for every login attempt, staff or agent."""
 
