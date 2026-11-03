@@ -20,6 +20,69 @@ class TenantMeView(APIView):
         return Response({"data": TenantSerializer(profile.tenant).data})
 
 
+class TenantSubscriptionView(APIView):
+    """Subscription snapshot for the signed-in tenant.
+
+    Volosync stores module access as two booleans on the tenant row, so the
+    frontend's canonical module list is derived here instead of being persisted
+    separately.
+    """
+
+    def get(self, request):
+        profile = getattr(request.user, "profile", None)
+        tenant = profile.tenant if profile else None
+        if not tenant:
+            return Response(
+                {"errors": {"message": "No property linked to this login."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        modules = ["Credentials(Common)"]
+        if tenant.module_inventory:
+            modules.append("Inventory")
+        if tenant.module_hr:
+            modules.append("HR Module")
+
+        paid_until = (
+            tenant.subscription_expires_on.isoformat()
+            if tenant.subscription_expires_on
+            else None
+        )
+        return Response(
+            {
+                "data": {
+                    "modules": modules,
+                    "setupFeeETB": 0,
+                    "quarterlyFeeETB": 0,
+                    "setupFeeApproved": True,
+                    "createdAt": tenant.created_at.isoformat()
+                    if tenant.created_at
+                    else None,
+                    "billingStartedAt": None,
+                    "billingHold": False,
+                    # Tenant billing is managed outside this app; treat it as
+                    # exempt so the module flags above are the real gate.
+                    "isIllustrationTenant": True,
+                    "freeTrialEndsAt": None,
+                    "subscriptionPaidUntil": paid_until,
+                    "subscriptionPaymentApproved": True,
+                    "paidQuartersCount": 0,
+                    "awaitingSelfSignupSetup": False,
+                    "paymentTransactionRef": tenant.subscription_transaction_id
+                    or None,
+                    "cafeOrderMode": "digital",
+                    "cafeOrderModeHistory": [],
+                    "cashierCancelOrdersEnabled": False,
+                    "receptionCmPortalEnabled": False,
+                    "waiterOrderingEnabled": False,
+                    "waiterPaymentApprovalEnabled": False,
+                    "hrSoloManagerEnabled": False,
+                    "hrBiometricsEnabled": False,
+                }
+            }
+        )
+
+
 class TenantListView(APIView):
     """Platform list: every wholesaler plus its branches."""
 

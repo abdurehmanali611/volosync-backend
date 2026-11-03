@@ -5,6 +5,7 @@ from .views import (
     TenantDetailView,
     TenantListView,
     TenantMeView,
+    TenantSubscriptionView,
 )
 
 urlpatterns = [
@@ -12,4 +13,5 @@ urlpatterns = [
     path("<int:pk>/", TenantDetailView.as_view()),
     path("<int:pk>/branches/", BranchCreateView.as_view()),
     path("me/", TenantMeView.as_view()),
+    path("subscription/", TenantSubscriptionView.as_view()),
 ]
