@@ -16,6 +16,7 @@ from .models import (
     CompensationRequest,
     Department,
     Employee,
+    HrAsset,
     HrDocument,
     HrNotification,
     HrWorkflow,
@@ -760,3 +761,47 @@ class CompensationRequestSerializer(serializers.ModelSerializer):
             "applied_period",
             "created_at",
         ]
+
+
+class HrAssetSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(
+        source="issued_to.full_name", read_only=True, default=""
+    )
+
+    class Meta:
+        model = HrAsset
+        fields = [
+            "id",
+            "label",
+            "serial_number",
+            "notes",
+            "status",
+            "issued_to",
+            "employee_name",
+            "issued_at",
+            "returned_at",
+            "created_by",
+            "created_at",
+        ]
+        read_only_fields = [
+            "status",
+            "issued_to",
+            "issued_at",
+            "returned_at",
+            "created_by",
+            "created_at",
+        ]
+
+
+class HrAssetInputSerializer(serializers.ModelSerializer):
+    """Registration input — status and the issue trail only move via actions."""
+
+    class Meta:
+        model = HrAsset
+        fields = ["label", "serial_number", "notes"]
+
+    def validate_label(self, value):
+        label = (value or "").strip()
+        if not label:
+            raise serializers.ValidationError("Type the asset label.")
+        return label

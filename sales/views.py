@@ -42,6 +42,22 @@ def sales_access_profile(tenant):
     )
 
 
+def visible_agent_ids(user):
+    """Agent rows the caller acts on; ``None`` means every agent in the tenant.
+
+    The tenant's shared Sales account oversees the whole team, so stock raised
+    for any agent shows up for it. Only a legacy per-agent login — one that is
+    not that Access account — stays pinned to its own rows.
+    """
+    if role_of(user) != "SALES":
+        return None
+    access = sales_access_profile(tenant_of(user))
+    if access and access.user_id == user.id:
+        return None
+    own = SalesAgent.objects.filter(user=user).values_list("id", flat=True).first()
+    return [own] if own else None
+
+
 class SalesAgentListCreateView(APIView):
     def get(self, request):
         tenant = tenant_of(request.user)
@@ -274,13 +290,9 @@ class SettlementListCreateView(APIView):
         if role_of(request.user) == "SALES":
             # The shared Sales login oversees every agent; a legacy per-agent
             # login keeps seeing only its own settlements.
-            agent_id = (
-                SalesAgent.objects.filter(user=request.user)
-                .values_list("id", flat=True)
-                .first()
-            )
-            if agent_id:
-                qs = qs.filter(assignment__sales_agent_id=agent_id)
+            agent_ids = visible_agent_ids(request.user)
+            if agent_ids:
+                qs = qs.filter(assignment__sales_agent_id__in=agent_ids)
         if request.query_params.get("queue") == "1":
             wanted = {"FINANCE": "PENDING_FINANCE", "MANAGER": "PENDING_MANAGER"}.get(
                 role_of(request.user)
@@ -380,6 +392,10 @@ class OpenAssignmentListView(APIView):
             .select_related("lot__item", "sales_agent", "request")
             .order_by("lot__item__name")
         )
+        # A legacy per-agent login only ever sees its own stock.
+        agent_ids = visible_agent_ids(request.user)
+        if agent_ids:
+            rows = rows.filter(sales_agent_id__in=agent_ids)
         item_param = request.query_params.get("item")
 
         items, seen = [], set()

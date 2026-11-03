@@ -39,6 +39,7 @@ from .models import (
     CompensationRequest,
     Department,
     Employee,
+    HrAsset,
     HrDocument,
     HrNotification,
     HrWorkflow,
@@ -70,6 +71,8 @@ from .serializers import (
     DepartmentSerializer,
     DocumentSerializer,
     EmployeeSerializer,
+    HrAssetInputSerializer,
+    HrAssetSerializer,
     HrNotificationSerializer,
     HrWorkflowSerializer,
     IncidentSerializer,
@@ -3270,3 +3273,98 @@ class PayrollHistoryView(APIView):
         if status_param:
             qs = qs.filter(status=status_param.upper())
         return Response({"data": PayrollSerializer(qs[:400], many=True).data})
+
+
+class HrAssetListCreateView(APIView):
+    """HR's own property register; the inventory asset table is untouched."""
+
+    def get(self, request):
+        tenant = tenant_of(request.user)
+        qs = HrAsset.objects.filter(tenant=tenant).select_related("issued_to")
+        state = request.query_params.get("status")
+        if state:
+            qs = qs.filter(status=state.upper())
+        employee = request.query_params.get("employee")
+        if employee:
+            qs = qs.filter(issued_to_id=employee)
+        return Response({"data": HrAssetSerializer(qs, many=True).data})
+
+    @require_roles("MANAGER")
+    def post(self, request):
+        tenant = tenant_of(request.user)
+        serializer = HrAssetInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        row = HrAsset.objects.create(
+            tenant=tenant, created_by=actor(request.user), **serializer.validated_data
+        )
+        return Response({"data": HrAssetSerializer(row).data}, status=201)
+
+
+class HrAssetDetailView(APIView):
+    @require_roles("MANAGER")
+    def patch(self, request, pk):
+        tenant = tenant_of(request.user)
+        asset = HrAsset.objects.filter(tenant=tenant, pk=pk).first()
+        if not asset:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        serializer = HrAssetInputSerializer(asset, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"data": HrAssetSerializer(asset).data})
+
+    @require_roles("MANAGER")
+    def delete(self, request, pk):
+        tenant = tenant_of(request.user)
+        deleted = HrAsset.objects.filter(tenant=tenant, pk=pk).delete()[0]
+        if not deleted:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        return Response({"data": {"id": int(pk), "deleted": True}})
+
+
+class HrAssetIssueView(APIView):
+    @require_roles("HR", "MANAGER")
+    def post(self, request, pk):
+        tenant = tenant_of(request.user)
+        asset = HrAsset.objects.filter(tenant=tenant, pk=pk).first()
+        if not asset:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        if asset.status == "ISSUED":
+            return Response(
+                {"errors": {"message": "This asset is already issued."}}, status=400
+            )
+        employee = Employee.objects.filter(
+            pk=request.data.get("employee"), tenant=tenant
+        ).first()
+        if not employee:
+            return Response(
+                {"errors": {"employee": "Select the employee."}}, status=400
+            )
+        asset.issued_to = employee
+        asset.issued_at = (
+            parse_date(request.data.get("issued_at") or "") or timezone.localdate()
+        )
+        asset.returned_at = None
+        asset.status = "ISSUED"
+        asset.save(update_fields=["issued_to", "issued_at", "returned_at", "status"])
+        return Response({"data": HrAssetSerializer(asset).data})
+
+
+class HrAssetReturnView(APIView):
+    @require_roles("HR", "MANAGER")
+    def post(self, request, pk):
+        tenant = tenant_of(request.user)
+        asset = HrAsset.objects.filter(tenant=tenant, pk=pk).first()
+        if not asset:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        if asset.status != "ISSUED":
+            return Response(
+                {"errors": {"message": "This asset is not issued."}}, status=400
+            )
+        asset.issued_to = None
+        asset.issued_at = None
+        asset.returned_at = (
+            parse_date(request.data.get("returned_at") or "") or timezone.localdate()
+        )
+        asset.status = "AVAILABLE"
+        asset.save(update_fields=["issued_to", "issued_at", "returned_at", "status"])
+        return Response({"data": HrAssetSerializer(asset).data})

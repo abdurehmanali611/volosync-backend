@@ -878,3 +878,38 @@ class CompensationRequest(models.Model):
 
     def __str__(self):
         return f"{self.get_kind_display()} · {self.employee} · {self.amount}"
+
+
+class HrAsset(models.Model):
+    """Property the HR module issues to staff.
+
+    Its own table: the inventory/Finance asset register tracks company property
+    assigned to clients, so an HR-issued handset must never surface there.
+    """
+
+    STATUS = (("AVAILABLE", "Available"), ("ISSUED", "Issued"))
+
+    tenant = models.ForeignKey(
+        Tenant, on_delete=models.CASCADE, related_name="hr_assets"
+    )
+    label = models.CharField(max_length=255)
+    serial_number = models.CharField(max_length=120, blank=True)
+    notes = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS, default="AVAILABLE")
+    issued_to = models.ForeignKey(
+        Employee,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="issued_assets",
+    )
+    issued_at = models.DateField(null=True, blank=True)
+    returned_at = models.DateField(null=True, blank=True)
+    created_by = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.label} ({self.status})"
