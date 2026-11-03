@@ -353,6 +353,8 @@ class SettlementListCreateView(APIView):
             returned_quantity=assignment.quantity - sold,
             sales_amount=expected,
             expected_amount=expected,
+            # A penalty is Finance's verdict; an agent raising the request never sets one.
+            penalty=False if role == "SALES" else serializer.validated_data.get("penalty", False),
             entered_by=request.user,
             status="PENDING_FINANCE" if role == "SALES" else "PENDING_MANAGER",
         )
