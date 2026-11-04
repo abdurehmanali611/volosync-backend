@@ -45,7 +45,7 @@ def sales_access_profile(tenant):
 PENALTY_MESSAGES = {
     "penalty_amount": "A penalty needs an amount greater than zero.",
     "penalty_reason": "A penalty needs a reason.",
-    "penalty": "A penalty needs unsold remainings on this sale.",
+    "penalty_over": "A penalty cannot be more than what this sale should have brought in.",
 }
 
 
@@ -425,14 +425,15 @@ class SettlementListCreateView(APIView):
         role = role_of(request.user)
         expected = (unit_price * sold).quantize(Decimal("0.01"))
         returned = assignment.quantity - sold
-        # Finance may raise the penalty while entering the sale; an agent never does.
+        # A penalty is the cash the agent failed to bring, so it is capped by the
+        # expected revenue the sold units should have produced.
         penalty_on, penalty_amount, penalty_reason = False, Decimal("0"), ""
         if role != "SALES":
             error, penalty_on, penalty_amount, penalty_reason = read_penalty(request.data)
             if error:
                 return error
-            if penalty_on and returned <= 0:
-                return penalty_error("penalty")
+            if penalty_on and penalty_amount > expected:
+                return penalty_error("penalty_over")
         settlement = serializer.save(
             tenant=tenant,
             returned_quantity=returned,
@@ -454,14 +455,14 @@ class SettlementDecisionView(APIView):
         settlement = SalesSettlement.objects.filter(tenant=tenant, pk=pk).first()
         if not settlement:
             return Response({"errors": {"message": "Not found."}}, status=404)
-        # The agent's penalty tick is a declaration; Finance owns the verdict,
-        # and a penalty only makes sense when stock came back unsold.
+        # The agent's penalty tick is a declaration; Finance owns the verdict.
+        # A penalty is the slice of expected revenue the agent never brought in.
         if "penalty" in request.data and settlement.status == "PENDING_FINANCE":
             error, penalty_on, penalty_amount, penalty_reason = read_penalty(request.data)
             if error:
                 return error
-            if penalty_on and settlement.returned_quantity <= 0:
-                return penalty_error("penalty")
+            if penalty_on and penalty_amount > settlement.expected_amount:
+                return penalty_error("penalty_over")
             settlement.penalty = penalty_on
             settlement.penalty_amount = penalty_amount
             settlement.penalty_reason = penalty_reason

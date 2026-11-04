@@ -50,6 +50,8 @@ class SalesSettlementSerializer(serializers.ModelSerializer):
     entered_by_name = serializers.SerializerMethodField()
     entered_at = serializers.DateTimeField(source="created_at", read_only=True)
     variance = serializers.SerializerMethodField()
+    collected_amount = serializers.SerializerMethodField()
+    unit_price = serializers.SerializerMethodField()
     finance_approval = serializers.SerializerMethodField()
     manager_approval = serializers.SerializerMethodField()
 
@@ -70,6 +72,8 @@ class SalesSettlementSerializer(serializers.ModelSerializer):
             "payment_method",
             "sales_amount",
             "expected_amount",
+            "collected_amount",
+            "unit_price",
             "variance",
             "penalty",
             "penalty_amount",
@@ -101,6 +105,17 @@ class SalesSettlementSerializer(serializers.ModelSerializer):
 
     def get_variance(self, obj):
         return str((obj.sales_amount - obj.expected_amount).quantize(Decimal("0.01")))
+
+    def get_collected_amount(self, obj):
+        """What the agent actually brought in: the expected gross less any penalty."""
+        shortfall = obj.penalty_amount if obj.penalty else Decimal("0")
+        collected = max(obj.expected_amount - shortfall, Decimal("0"))
+        return str(collected.quantize(Decimal("0.01")))
+
+    def get_unit_price(self, obj):
+        assignment = obj.assignment
+        price = assignment.unit_sales_at_assignment + assignment.changing_amount
+        return str(price.quantize(Decimal("0.01")))
 
     def _approval_stamp(self, obj, step):
         row = (
