@@ -230,6 +230,8 @@ class InventorySummaryView(APIView):
                     "output_vat": str(output_vat),
                     "vat": str(vat_amount),
                     "vat_rate": str(lot.vat_rate),
+                    "supplier_name": lot.supplier_name,
+                    "registration_date": str(lot.registration_date),
                     # Decimal mirrors, dropped below — used to filter and total.
                     "_registered_value": registered_value,
                     "_in_store_value": in_store_value,

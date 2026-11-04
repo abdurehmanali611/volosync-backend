@@ -33,9 +33,17 @@ class SalesAgentSerializer(serializers.ModelSerializer):
 
 class SalesSettlementSerializer(serializers.ModelSerializer):
     agent_name = serializers.CharField(source="assignment.sales_agent.full_name", read_only=True)
+    agent_id = serializers.IntegerField(source="assignment.sales_agent_id", read_only=True)
     item_name = serializers.CharField(source="assignment.lot.item.name", read_only=True)
+    category = serializers.CharField(source="assignment.lot.item.category", read_only=True)
     voucher_number = serializers.CharField(source="assignment.lot.voucher_number", read_only=True)
     lot = serializers.IntegerField(source="assignment.lot_id", read_only=True)
+    unit_cost = serializers.DecimalField(
+        source="assignment.lot.unit_cost", max_digits=18, decimal_places=2, read_only=True
+    )
+    vat_rate = serializers.DecimalField(
+        source="assignment.lot.vat_rate", max_digits=5, decimal_places=2, read_only=True
+    )
     assigned_quantity = serializers.DecimalField(
         source="assignment.quantity", max_digits=14, decimal_places=3, read_only=True
     )
@@ -53,7 +61,9 @@ class SalesSettlementSerializer(serializers.ModelSerializer):
             "lot",
             "voucher_number",
             "item_name",
+            "category",
             "agent_name",
+            "agent_id",
             "assigned_quantity",
             "sold_quantity",
             "returned_quantity",
@@ -62,6 +72,10 @@ class SalesSettlementSerializer(serializers.ModelSerializer):
             "expected_amount",
             "variance",
             "penalty",
+            "penalty_amount",
+            "penalty_reason",
+            "unit_cost",
+            "vat_rate",
             "note",
             "status",
             "entered_by",

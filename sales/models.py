@@ -64,6 +64,8 @@ class SalesSettlement(models.Model):
     sales_amount = models.DecimalField(**MONEY)
     expected_amount = models.DecimalField(**MONEY)
     penalty = models.BooleanField(default=False)
+    penalty_amount = models.DecimalField(**MONEY, default=Decimal("0"))
+    penalty_reason = models.TextField(blank=True)
     note = models.TextField(blank=True)
     status = models.CharField(
         max_length=20,

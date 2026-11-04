@@ -42,6 +42,46 @@ def sales_access_profile(tenant):
     )
 
 
+PENALTY_MESSAGES = {
+    "penalty_amount": "A penalty needs an amount greater than zero.",
+    "penalty_reason": "A penalty needs a reason.",
+    "penalty": "A penalty needs unsold remainings on this sale.",
+}
+
+
+def is_penalty_on(value):
+    return value is True or str(value).lower() in {"1", "true", "yes", "on"}
+
+
+def penalty_error(field):
+    """Field-keyed envelope that also carries a message the portal can toast."""
+    return Response(
+        {"errors": {"message": PENALTY_MESSAGES[field], field: PENALTY_MESSAGES[field]}},
+        status=status.HTTP_400_BAD_REQUEST,
+    )
+
+
+def read_penalty(data):
+    """Finance's penalty verdict: the amount and the reason are a required pair.
+
+    Returns ``(error_response, on, amount, reason)``; ``error_response`` is a
+    ready 400 envelope whenever the verdict is unusable.
+    """
+    if not is_penalty_on(data.get("penalty")):
+        return None, False, Decimal("0"), ""
+    reason = str(data.get("penalty_reason") or "").strip()
+    raw = str(data.get("penalty_amount") or "").strip().replace(",", "")
+    try:
+        amount = Decimal(raw).quantize(Decimal("0.01"))
+    except Exception:
+        return penalty_error("penalty_amount"), False, Decimal("0"), ""
+    if amount <= 0:
+        return penalty_error("penalty_amount"), False, Decimal("0"), ""
+    if not reason:
+        return penalty_error("penalty_reason"), False, Decimal("0"), ""
+    return None, True, amount, reason
+
+
 def visible_agent_ids(user):
     """Agent rows the caller acts on; ``None`` means every agent in the tenant.
 
@@ -225,6 +265,13 @@ class SalesAgentRankingView(APIView):
         since = ranking_period_start(request.query_params.get("period", "alltime"))
         if since:
             qs = qs.filter(created_at__gte=since)
+        # An explicit window (the reporting period strip) overrides the preset.
+        date_from = request.query_params.get("from")
+        if date_from:
+            qs = qs.filter(created_at__date__gte=date_from)
+        date_to = request.query_params.get("to")
+        if date_to:
+            qs = qs.filter(created_at__date__lte=date_to)
         rows = (
             qs.values("assignment__sales_agent_id")
             .annotate(
@@ -238,8 +285,24 @@ class SalesAgentRankingView(APIView):
                         output_field=IntegerField(),
                     )
                 ),
+                penalty_amount=Sum("penalty_amount"),
             )
         )
+        # Finance writes the reason on every penalty; the panel lists them.
+        reasons = {}
+        penalised = qs.filter(penalty=True).exclude(penalty_reason="").select_related(
+            "assignment__sales_agent", "assignment__lot__item"
+        )
+        for row in penalised:
+            reasons.setdefault(row.assignment.sales_agent_id, []).append(
+                {
+                    "amount": str(row.penalty_amount.quantize(Decimal("0.01"))),
+                    "reason": row.penalty_reason,
+                    "item": row.assignment.lot.item.name,
+                    "voucher": row.assignment.lot.voucher_number,
+                    "at": row.created_at,
+                }
+            )
         stats = {row["assignment__sales_agent_id"]: row for row in rows}
         data = []
         for agent in SalesAgent.objects.filter(tenant=tenant, is_active=True):
@@ -248,6 +311,9 @@ class SalesAgentRankingView(APIView):
             units = row.get("units") or Decimal("0")
             returned = row.get("returned") or Decimal("0")
             penalties = row.get("penalties") or 0
+            penalty_amount = (row.get("penalty_amount") or Decimal("0")).quantize(
+                Decimal("0.01")
+            )
             data.append(
                 {
                     "agent_id": agent.id,
@@ -256,17 +322,27 @@ class SalesAgentRankingView(APIView):
                     "units_sold": str(units),
                     "returned_quantity": str(returned),
                     "penalty_count": penalties,
+                    "penalty_amount": str(penalty_amount),
                     "has_penalty": penalties > 0,
+                    "penalty_reasons": reasons.get(agent.id, []),
                 }
             )
-        # Penalized agents always rank below clean ones; then revenue, then units.
-        data.sort(key=lambda row: (row["has_penalty"], -Decimal(row["revenue"]), -Decimal(row["units_sold"])))
+        # Standing is decided by the penalty total: the smallest amount of
+        # penalties first, then revenue, then units sold.
+        data.sort(
+            key=lambda row: (
+                Decimal(row["penalty_amount"]),
+                row["has_penalty"],
+                -Decimal(row["revenue"]),
+                -Decimal(row["units_sold"]),
+            )
+        )
         # Competition ranking: identical scores share a rank and the next
         # distinct score skips the tied places (1, 1, 3 / 1, 1, 1, 4).
         previous_key = None
         previous_rank = 0
         for index, row in enumerate(data, start=1):
-            key = (row["has_penalty"], row["revenue"], row["units_sold"])
+            key = (row["penalty_amount"], row["has_penalty"], row["revenue"], row["units_sold"])
             if key != previous_key:
                 previous_rank = index
                 previous_key = key
@@ -348,13 +424,24 @@ class SettlementListCreateView(APIView):
             )
         role = role_of(request.user)
         expected = (unit_price * sold).quantize(Decimal("0.01"))
+        returned = assignment.quantity - sold
+        # Finance may raise the penalty while entering the sale; an agent never does.
+        penalty_on, penalty_amount, penalty_reason = False, Decimal("0"), ""
+        if role != "SALES":
+            error, penalty_on, penalty_amount, penalty_reason = read_penalty(request.data)
+            if error:
+                return error
+            if penalty_on and returned <= 0:
+                return penalty_error("penalty")
         settlement = serializer.save(
             tenant=tenant,
-            returned_quantity=assignment.quantity - sold,
+            returned_quantity=returned,
             sales_amount=expected,
             expected_amount=expected,
             # A penalty is Finance's verdict; an agent raising the request never sets one.
-            penalty=False if role == "SALES" else serializer.validated_data.get("penalty", False),
+            penalty=penalty_on,
+            penalty_amount=penalty_amount,
+            penalty_reason=penalty_reason,
             entered_by=request.user,
             status="PENDING_FINANCE" if role == "SALES" else "PENDING_MANAGER",
         )
@@ -370,20 +457,17 @@ class SettlementDecisionView(APIView):
         # The agent's penalty tick is a declaration; Finance owns the verdict,
         # and a penalty only makes sense when stock came back unsold.
         if "penalty" in request.data and settlement.status == "PENDING_FINANCE":
-            penalty_on = request.data.get("penalty") is True or str(
-                request.data.get("penalty")
-            ).lower() in {"1", "true", "yes"}
+            error, penalty_on, penalty_amount, penalty_reason = read_penalty(request.data)
+            if error:
+                return error
             if penalty_on and settlement.returned_quantity <= 0:
-                return Response(
-                    {
-                        "errors": {
-                            "penalty": "A penalty needs unsold remainings on this sale."
-                        }
-                    },
-                    status=400,
-                )
+                return penalty_error("penalty")
             settlement.penalty = penalty_on
-            settlement.save(update_fields=["penalty"])
+            settlement.penalty_amount = penalty_amount
+            settlement.penalty_reason = penalty_reason
+            settlement.save(
+                update_fields=["penalty", "penalty_amount", "penalty_reason"]
+            )
         decide(
             settlement,
             request.user,
