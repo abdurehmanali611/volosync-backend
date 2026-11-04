@@ -481,6 +481,25 @@ class EmployeeDetailView(APIView):
             {"data": EmployeeSerializer(row, context={"request": request}).data}
         )
 
+    @require_roles("HR", "MANAGER")
+    def delete(self, request, pk):
+        """Hard-remove a terminated employee; their HR history goes with them.
+
+        Active staff are refused because leave, attendance and already-approved
+        payslips all cascade away, so termination has to come first.
+        """
+        tenant = tenant_of(request.user)
+        row = Employee.objects.filter(tenant=tenant, pk=pk).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        if row.status != "TERMINATED":
+            return Response(
+                {"errors": {"message": "Terminate this employee before deleting it."}},
+                status=400,
+            )
+        row.delete()
+        return Response({"data": {"deleted": True}})
+
 
 class LeaveTypeListCreateView(APIView):
     def get(self, request):
