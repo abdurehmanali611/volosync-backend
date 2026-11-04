@@ -74,6 +74,8 @@ class Employee(models.Model):
         ("TERMINATED", "Terminated"),
     )
     SEX = (("M", "Male"), ("F", "Female"), ("", "—"))
+    # Mirrors WageType.frequency so a roster row lines up with its pay window.
+    WAGE_TYPES = (("MONTHLY", "Monthly"), ("WEEKLY", "Weekly"), ("DAILY", "Daily"))
 
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="hr_employees")
     employee_no = models.CharField(max_length=40, blank=True)
@@ -88,6 +90,10 @@ class Employee(models.Model):
     job_title = models.CharField(max_length=120, blank=True)
     hired_on = models.DateField(null=True, blank=True)
     salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    wage_type = models.CharField(max_length=20, choices=WAGE_TYPES, default="MONTHLY")
+    # Pay-path fields: payroll and the bank export skip an employee until both are set.
+    bank_name = models.CharField(max_length=120, blank=True)
+    account_number = models.CharField(max_length=60, blank=True)
     status = models.CharField(max_length=20, choices=STATUS, default="ACTIVE")
     portal_otp = models.CharField(max_length=10, blank=True)
     shift = models.ForeignKey(
@@ -103,6 +109,12 @@ class Employee(models.Model):
     must_change_otp = models.BooleanField(default=True)
     portal_first_login_at = models.DateTimeField(null=True, blank=True)
     profile_image_url = models.URLField(blank=True)
+    # Hiring profile the employee form collects.
+    education = models.CharField(max_length=120, blank=True)
+    years_experience = models.PositiveSmallIntegerField(default=0)
+    personal_tin = models.CharField(max_length=60, blank=True)
+    medical_note = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
     # OTP reset audit (reset endpoint writes these).
     otp_reset_by = models.CharField(max_length=255, blank=True)
     otp_reset_at = models.DateTimeField(null=True, blank=True)

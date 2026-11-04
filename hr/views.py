@@ -281,6 +281,12 @@ EMPLOYEE_TEXT_FIELDS = (
     "email",
     "job_title",
     "org_position",
+    "bank_name",
+    "account_number",
+    "education",
+    "personal_tin",
+    "medical_note",
+    "notes",
     "portal_otp",
     "profile_image_url",
 )
@@ -322,6 +328,22 @@ def _employee_values(data, tenant, errors):
                 errors["salary"] = "Enter a valid salary."
         else:
             values["salary"] = Decimal(0)
+    if "wage_type" in data:
+        key = _provided(data, "wage_type").upper()
+        if not key:
+            values["wage_type"] = "MONTHLY"
+        elif key not in {choice[0] for choice in Employee.WAGE_TYPES}:
+            errors["wage_type"] = "Use monthly, weekly or daily."
+        else:
+            values["wage_type"] = key
+    if "years_experience" in data:
+        raw = _provided(data, "years_experience")
+        if not raw:
+            values["years_experience"] = 0
+        elif not raw.isdigit() or int(raw) > 99:
+            errors["years_experience"] = "Enter a realistic number of years."
+        else:
+            values["years_experience"] = int(raw)
     if "hired_on" in data:
         raw = _provided(data, "hired_on")
         if raw:

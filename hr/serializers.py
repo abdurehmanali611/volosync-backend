@@ -106,6 +106,9 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "job_title",
             "hired_on",
             "salary",
+            "wage_type",
+            "bank_name",
+            "account_number",
             "status",
             "portal_otp",
             "shift",
@@ -116,6 +119,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "must_change_otp",
             "portal_first_login_at",
             "profile_image_url",
+            "education",
+            "years_experience",
+            "personal_tin",
+            "medical_note",
+            "notes",
             "otp_reset_by",
             "otp_reset_at",
             "created_at",
@@ -298,6 +306,12 @@ class PayrollSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source="employee.full_name", read_only=True)
     employee_id = serializers.IntegerField(source="employee.id", read_only=True)
     job_title = serializers.CharField(source="employee.job_title", read_only=True)
+    bank_name = serializers.CharField(
+        source="employee.bank_name", read_only=True, default=""
+    )
+    account_number = serializers.CharField(
+        source="employee.account_number", read_only=True, default=""
+    )
     period_id = serializers.IntegerField(source="payroll_period.id", read_only=True)
     period_key = serializers.CharField(source="payroll_period.period_key", read_only=True)
 
@@ -308,6 +322,8 @@ class PayrollSerializer(serializers.ModelSerializer):
             "employee_id",
             "employee_name",
             "job_title",
+            "bank_name",
+            "account_number",
             "period_id",
             "period_key",
             "gross",
