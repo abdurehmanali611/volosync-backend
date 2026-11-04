@@ -8,12 +8,13 @@ import calendar
 import os
 import random
 from datetime import date, timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from uuid import uuid4
 
 import secrets
 import string
 
+from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.db import connection
 from django.db.models import Count, Q, Sum
@@ -103,6 +104,22 @@ def _dates(request):
     day_from = request.query_params.get("from")
     day_to = request.query_params.get("to")
     return day_from, day_to
+
+
+def _provided(data, name):
+    return str(data.get(name) if data.get(name) is not None else "").strip()
+
+
+def _tenant_fk(model, tenant, value):
+    """Tenant-scoped row for an id key, reading an unusable id as unset.
+
+    Django raises ValueError when an id key holds a label and MySQL surfaces it
+    as a 500 the portal cannot explain.
+    """
+    raw = str(value if value is not None else "").strip()
+    if not raw.isdigit():
+        return None
+    return model.objects.filter(pk=int(raw), tenant=tenant).first()
 
 
 class HrDashboardView(APIView):
@@ -213,9 +230,7 @@ class TeamListCreateView(APIView):
             return Response({"errors": {"code": "This team code already exists."}}, status=400)
         department = None
         if request.data.get("department"):
-            department = Department.objects.filter(
-                pk=request.data.get("department"), tenant=tenant
-            ).first()
+            department = _tenant_fk(Department, tenant, request.data.get("department"))
         row = Team.objects.create(
             tenant=tenant,
             code=code,
@@ -240,9 +255,7 @@ class TeamDetailView(APIView):
         if request.data.get("code"):
             row.code = str(request.data["code"]).upper()[:40]
         if "department" in request.data:
-            row.department = Department.objects.filter(
-                pk=request.data.get("department"), tenant=tenant
-            ).first()
+            row.department = _tenant_fk(Department, tenant, request.data.get("department"))
         row.save()
         return Response({"data": TeamSerializer(row).data})
 
@@ -254,6 +267,106 @@ class TeamDetailView(APIView):
             return Response({"errors": {"message": "Not found."}}, status=404)
         row.delete()
         return Response({"data": {"deleted": True}})
+
+
+# The roster columns are narrow and MySQL runs strict, so a value that cannot fit
+# its column has to come back as a 400 naming the field. Left unchecked the INSERT
+# dies on a 1406 DataError and the portal shows an unexplained 500.
+EMPLOYEE_SEX = {"": "", "M": "M", "MALE": "M", "F": "F", "FEMALE": "F"}
+EMPLOYEE_TEXT_FIELDS = (
+    "employee_no",
+    "first_name",
+    "last_name",
+    "phone",
+    "email",
+    "job_title",
+    "org_position",
+    "portal_otp",
+    "profile_image_url",
+)
+EMPLOYEE_RELATIONS = (
+    ("department", Department),
+    ("team", Team),
+    ("shift", ShiftTemplate),
+)
+
+
+def _employee_values(data, tenant, errors):
+    """Column-ready values for exactly the keys the portal sent.
+
+    Create and edit share this so both speak one shape: the roster keeps M/F
+    sex, an uppercase status, a decimal salary, an ISO hire date and
+    tenant-scoped relation ids.
+    """
+    values = {}
+    for name in EMPLOYEE_TEXT_FIELDS:
+        if name in data:
+            values[name] = _provided(data, name)
+    if "sex" in data:
+        key = _provided(data, "sex").upper()
+        if key not in EMPLOYEE_SEX:
+            errors["sex"] = "Use male or female."
+        values["sex"] = EMPLOYEE_SEX.get(key, "")
+    if "status" in data and _provided(data, "status"):
+        key = _provided(data, "status").upper()
+        if key not in {choice[0] for choice in Employee.STATUS}:
+            errors["status"] = "Use ACTIVE, ON_LEAVE or TERMINATED."
+        else:
+            values["status"] = key
+    if "salary" in data:
+        raw = _provided(data, "salary").replace(",", "")
+        if raw:
+            try:
+                values["salary"] = Decimal(raw)
+            except InvalidOperation:
+                errors["salary"] = "Enter a valid salary."
+        else:
+            values["salary"] = Decimal(0)
+    if "hired_on" in data:
+        raw = _provided(data, "hired_on")
+        if raw:
+            parsed = parse_date(raw[:10])
+            if parsed is None:
+                errors["hired_on"] = "Use the YYYY-MM-DD format."
+            values["hired_on"] = parsed
+        else:
+            values["hired_on"] = None
+    if "must_change_otp" in data:
+        values["must_change_otp"] = _provided(data, "must_change_otp").lower() not in (
+            "",
+            "0",
+            "false",
+        )
+    for name, model in EMPLOYEE_RELATIONS:
+        if name not in data:
+            continue
+        raw = _provided(data, name)
+        if not raw:
+            values[name] = None
+        elif not raw.isdigit():
+            errors[name] = "Choose a value from the list."
+        else:
+            related = _tenant_fk(model, tenant, raw)
+            if related is None:
+                errors[name] = "No such record for this business."
+            values[name] = related
+    return values
+
+
+def _employee_problems(row, changed=None):
+    """Field-keyed messages for whatever MySQL would have refused to store."""
+    skipped = [
+        field.name
+        for field in Employee._meta.fields
+        if changed is not None and field.name not in changed
+    ]
+    errors = {}
+    try:
+        row.full_clean(exclude=skipped)
+    except ValidationError as exc:
+        for name, messages in exc.message_dict.items():
+            errors[name] = " ".join(messages)
+    return errors
 
 
 class EmployeeListCreateView(APIView):
@@ -287,42 +400,21 @@ class EmployeeListCreateView(APIView):
     @require_roles("HR")
     def post(self, request):
         tenant = tenant_of(request.user)
-        department = None
-        if request.data.get("department"):
-            department = Department.objects.filter(
-                pk=request.data.get("department"), tenant=tenant
-            ).first()
-        team = None
-        if request.data.get("team"):
-            team = Team.objects.filter(
-                pk=request.data.get("team"), tenant=tenant
-            ).first()
+        errors = {}
+        values = _employee_values(request.data, tenant, errors)
+        if errors:
+            return Response({"errors": errors}, status=400)
         count = Employee.objects.filter(tenant=tenant).count()
-        otp = str(request.data.get("portal_otp") or "").strip()
-        if not otp:
-            otp = f"{random.randint(0, 999999):06d}"
-        row = Employee.objects.create(
-            tenant=tenant,
-            employee_no=request.data.get("employee_no") or f"EMP-{count + 1:04d}",
-            first_name=request.data.get("first_name", ""),
-            last_name=request.data.get("last_name", ""),
-            sex=request.data.get("sex", ""),
-            phone=request.data.get("phone", ""),
-            email=request.data.get("email", ""),
-            department=department,
-            team=team,
-            org_position=request.data.get("org_position", ""),
-            job_title=request.data.get("job_title", ""),
-            hired_on=request.data.get("hired_on") or None,
-            salary=request.data.get("salary") or 0,
-            portal_otp=otp,
-            must_change_otp=bool(request.data.get("must_change_otp", True)),
-        )
-        if request.data.get("shift"):
-            row.shift = ShiftTemplate.objects.filter(
-                pk=request.data.get("shift"), tenant=tenant
-            ).first()
-            row.save(update_fields=["shift"])
+        row = Employee(tenant=tenant)
+        for key, value in values.items():
+            setattr(row, key, value)
+        row.employee_no = row.employee_no or f"EMP-{count + 1:04d}"
+        row.portal_otp = values.get("portal_otp") or _new_portal_otp()
+        row.must_change_otp = values.get("must_change_otp", True)
+        problems = _employee_problems(row)
+        if problems:
+            return Response({"errors": problems}, status=400)
+        row.save()
         return Response(
             {
                 "data": EmployeeSerializer(
@@ -335,43 +427,33 @@ class EmployeeListCreateView(APIView):
 
 class EmployeeDetailView(APIView):
     @require_roles("HR", "MANAGER")
+    def get(self, request, pk):
+        tenant = tenant_of(request.user)
+        row = Employee.objects.filter(tenant=tenant, pk=pk).first()
+        if not row:
+            return Response({"errors": {"message": "Not found."}}, status=404)
+        return Response(
+            {"data": EmployeeSerializer(row, context={"request": request}).data}
+        )
+
+    @require_roles("HR", "MANAGER")
     def patch(self, request, pk):
         tenant = tenant_of(request.user)
         row = Employee.objects.filter(tenant=tenant, pk=pk).first()
         if not row:
             return Response({"errors": {"message": "Not found."}}, status=404)
-        for field in [
-            "first_name",
-            "last_name",
-            "sex",
-            "phone",
-            "email",
-            "job_title",
-            "salary",
-            "status",
-            "portal_otp",
-            "org_position",
-            "must_change_otp",
-            "profile_image_url",
-        ]:
-            if field in request.data:
-                setattr(row, field, request.data[field])
-        if "department" in request.data:
-            row.department = Department.objects.filter(
-                pk=request.data.get("department"), tenant=tenant
-            ).first()
-        if "team" in request.data:
-            row.team = Team.objects.filter(
-                pk=request.data.get("team"), tenant=tenant
-            ).first()
-        if "shift" in request.data:
-            row.shift = ShiftTemplate.objects.filter(
-                pk=request.data.get("shift"), tenant=tenant
-            ).first()
-        if "hired_on" in request.data:
-            row.hired_on = request.data.get("hired_on") or None
-        if "portal_otp" in request.data:
-            row.must_change_otp = True
+        errors = {}
+        values = _employee_values(request.data, tenant, errors)
+        # A fresh OTP always goes back to must-change, whatever the form sent.
+        if "portal_otp" in request.data and values.get("portal_otp"):
+            values["must_change_otp"] = True
+        if errors:
+            return Response({"errors": errors}, status=400)
+        for key, value in values.items():
+            setattr(row, key, value)
+        problems = _employee_problems(row, changed=set(values))
+        if problems:
+            return Response({"errors": problems}, status=400)
         row.save()
         return Response(
             {"data": EmployeeSerializer(row, context={"request": request}).data}
@@ -453,9 +535,7 @@ class LeaveListCreateView(APIView):
     @require_roles("HR", "MANAGER")
     def post(self, request):
         tenant = tenant_of(request.user)
-        employee = Employee.objects.filter(
-            pk=request.data.get("employee"), tenant=tenant
-        ).first()
+        employee = _tenant_fk(Employee, tenant, request.data.get("employee"))
         if not employee:
             return Response(
                 {"errors": {"employee": "Choose an employee."}}, status=400
@@ -591,9 +671,7 @@ class LeaveBalanceView(APIView):
     @require_roles("HR")
     def post(self, request):
         tenant = tenant_of(request.user)
-        employee = Employee.objects.filter(
-            pk=request.data.get("employee"), tenant=tenant
-        ).first()
+        employee = _tenant_fk(Employee, tenant, request.data.get("employee"))
         leave_type = resolve_leave_type(
             tenant, (request.data.get("leave_type") or "").upper()
         )
@@ -644,14 +722,12 @@ class AttendanceListCreateView(APIView):
     @require_roles("HR", "MANAGER")
     def post(self, request):
         tenant = tenant_of(request.user)
-        employee = Employee.objects.filter(pk=request.data.get("employee"), tenant=tenant).first()
+        employee = _tenant_fk(Employee, tenant, request.data.get("employee"))
         if not employee:
             return Response({"errors": {"employee": "Choose an employee."}}, status=400)
         shift = None
         if request.data.get("shift"):
-            shift = ShiftTemplate.objects.filter(
-                pk=request.data.get("shift"), tenant=tenant
-            ).first()
+            shift = _tenant_fk(ShiftTemplate, tenant, request.data.get("shift"))
         row, created = Attendance.objects.get_or_create(
             employee=employee,
             day=request.data.get("day"),
@@ -743,11 +819,12 @@ class PayrollPeriodListCreateView(APIView):
         period_key = (request.data.get("period_key") or "").strip()
         from_ymd = parse_date(str(request.data.get("from_ymd") or ""))
         to_ymd = parse_date(str(request.data.get("to_ymd") or ""))
+        wage_type_key = _provided(request.data, "wage_type")
         wage_type = (
             WageType.objects.filter(
-                pk=request.data.get("wage_type"), tenant=tenant, active=True
+                pk=int(wage_type_key), tenant=tenant, active=True
             ).first()
-            if request.data.get("wage_type")
+            if wage_type_key.isdigit()
             else None
         )
         if not period_key:
@@ -1092,9 +1169,7 @@ class DocumentListCreateView(APIView):
         tenant = tenant_of(request.user)
         employee = None
         if request.data.get("employee"):
-            employee = Employee.objects.filter(
-                pk=request.data.get("employee"), tenant=tenant
-            ).first()
+            employee = _tenant_fk(Employee, tenant, request.data.get("employee"))
         row = HrDocument.objects.create(
             tenant=tenant,
             employee=employee,
@@ -1195,9 +1270,7 @@ class IncidentListCreateView(APIView):
         tenant = tenant_of(request.user)
         employee = None
         if request.data.get("employee"):
-            employee = Employee.objects.filter(
-                pk=request.data.get("employee"), tenant=tenant
-            ).first()
+            employee = _tenant_fk(Employee, tenant, request.data.get("employee"))
         kind = request.data.get("kind", "Conduct")
         # Managed incident types supply the default salary-deduct flag.
         incident_type = IncidentType.objects.filter(
@@ -1315,9 +1388,7 @@ class NotificationListCreateView(APIView):
     @require_roles("HR", "MANAGER")
     def post(self, request):
         tenant = tenant_of(request.user)
-        employee = Employee.objects.filter(
-            pk=request.data.get("employee"), tenant=tenant
-        ).first()
+        employee = _tenant_fk(Employee, tenant, request.data.get("employee"))
         title = (request.data.get("title") or "").strip()
         if not employee or not title:
             return Response(
@@ -1682,9 +1753,7 @@ class ShiftTemplateListCreateView(APIView):
             )
         department = None
         if request.data.get("department"):
-            department = Department.objects.filter(
-                pk=request.data.get("department"), tenant=tenant
-            ).first()
+            department = _tenant_fk(Department, tenant, request.data.get("department"))
         row = ShiftTemplate.objects.create(
             tenant=tenant,
             code=code,
@@ -1707,9 +1776,7 @@ class ShiftTemplateBulkCreateView(APIView):
         tenant = tenant_of(request.user)
         department = None
         if request.data.get("department"):
-            department = Department.objects.filter(
-                pk=request.data.get("department"), tenant=tenant
-            ).first()
+            department = _tenant_fk(Department, tenant, request.data.get("department"))
         created, skipped = [], []
         for item in request.data.get("shifts") or []:
             name = str(item.get("name", "")).strip()
@@ -1754,9 +1821,7 @@ class ShiftTemplateDetailView(APIView):
         if request.data.get("code"):
             row.code = str(request.data["code"]).upper()[:40]
         if "department" in request.data:
-            row.department = Department.objects.filter(
-                pk=request.data.get("department"), tenant=tenant
-            ).first()
+            row.department = _tenant_fk(Department, tenant, request.data.get("department"))
         row.save()
         return Response({"data": ShiftTemplateSerializer(row).data})
 
@@ -1791,9 +1856,7 @@ class WorkflowListCreateView(APIView):
             )
         department = None
         if request.data.get("department"):
-            department = Department.objects.filter(
-                pk=request.data.get("department"), tenant=tenant
-            ).first()
+            department = _tenant_fk(Department, tenant, request.data.get("department"))
         row = HrWorkflow.objects.filter(
             tenant=tenant,
             request_type=request_type,
@@ -1826,9 +1889,7 @@ class WorkflowDetailView(APIView):
             if field in request.data:
                 setattr(row, field, bool(request.data[field]))
         if "department" in request.data:
-            row.department = Department.objects.filter(
-                pk=request.data.get("department"), tenant=tenant
-            ).first()
+            row.department = _tenant_fk(Department, tenant, request.data.get("department"))
         row.save()
         return Response({"data": HrWorkflowSerializer(row).data})
 
@@ -1864,9 +1925,7 @@ class PeopleEventListCreateView(APIView):
     @require_roles("HR", "MANAGER")
     def post(self, request):
         tenant = tenant_of(request.user)
-        employee = Employee.objects.filter(
-            pk=request.data.get("employee"), tenant=tenant
-        ).first()
+        employee = _tenant_fk(Employee, tenant, request.data.get("employee"))
         if not employee:
             return Response({"errors": {"employee": "Choose an employee."}}, status=400)
         kind = request.data.get("kind") or "other"
@@ -1877,9 +1936,7 @@ class PeopleEventListCreateView(APIView):
             kind=kind,
             detail=request.data.get("detail", ""),
             from_department=from_department,
-            to_department=Department.objects.filter(
-                pk=request.data.get("to_department"), tenant=tenant
-            ).first()
+            to_department=_tenant_fk(Department, tenant, request.data.get("to_department"))
             if request.data.get("to_department")
             else None,
             from_title=employee.job_title,
@@ -1945,12 +2002,10 @@ class ChecklistTemplateListCreateView(APIView):
             return Response({"errors": {"name": "Name is required."}}, status=400)
         department = None
         if request.data.get("department"):
-            department = Department.objects.filter(
-                pk=request.data.get("department"), tenant=tenant
-            ).first()
+            department = _tenant_fk(Department, tenant, request.data.get("department"))
         team = None
         if request.data.get("team"):
-            team = Team.objects.filter(pk=request.data.get("team"), tenant=tenant).first()
+            team = _tenant_fk(Team, tenant, request.data.get("team"))
         row = ChecklistTemplate.objects.create(
             tenant=tenant,
             kind=request.data.get("kind") or "onboarding",
@@ -1983,13 +2038,9 @@ class ChecklistTemplateDetailView(APIView):
             if field in request.data:
                 setattr(row, field, request.data[field])
         if "department" in request.data:
-            row.department = Department.objects.filter(
-                pk=request.data.get("department"), tenant=tenant
-            ).first()
+            row.department = _tenant_fk(Department, tenant, request.data.get("department"))
         if "team" in request.data:
-            row.team = Team.objects.filter(
-                pk=request.data.get("team"), tenant=tenant
-            ).first()
+            row.team = _tenant_fk(Team, tenant, request.data.get("team"))
         row.save()
         if request.data.get("items") is not None:
             row.items.all().delete()
@@ -2038,14 +2089,10 @@ class ChecklistRunListCreateView(APIView):
     def post(self, request):
         """Start a run for an employee; items are copied from the template."""
         tenant = tenant_of(request.user)
-        employee = Employee.objects.filter(
-            pk=request.data.get("employee"), tenant=tenant
-        ).first()
+        employee = _tenant_fk(Employee, tenant, request.data.get("employee"))
         if not employee:
             return Response({"errors": {"employee": "Choose an employee."}}, status=400)
-        template = ChecklistTemplate.objects.filter(
-            pk=request.data.get("template"), tenant=tenant
-        ).first()
+        template = _tenant_fk(ChecklistTemplate, tenant, request.data.get("template"))
         if not template:
             return Response({"errors": {"template": "Choose a checklist template."}}, status=400)
         run = ChecklistRun.objects.create(
@@ -2160,9 +2207,7 @@ class AttendanceCorrectionListCreateView(APIView):
     @require_roles("HR", "MANAGER")
     def post(self, request):
         tenant = tenant_of(request.user)
-        employee = Employee.objects.filter(
-            pk=request.data.get("employee"), tenant=tenant
-        ).first()
+        employee = _tenant_fk(Employee, tenant, request.data.get("employee"))
         if not employee:
             return Response({"errors": {"employee": "Choose an employee."}}, status=400)
         day = request.data.get("day")
@@ -2390,9 +2435,7 @@ class OtpResetListCreateView(APIView):
     @require_roles("HR")
     def post(self, request):
         tenant = tenant_of(request.user)
-        employee = Employee.objects.filter(
-            tenant=tenant, pk=request.data.get("employee")
-        ).first()
+        employee = _tenant_fk(Employee, tenant, request.data.get("employee"))
         if not employee:
             return Response(
                 {"errors": {"employee": "Choose an employee."}}, status=400
@@ -3003,9 +3046,7 @@ class CompensationRequestListCreateView(APIView):
     @require_roles("HR", "MANAGER")
     def post(self, request):
         tenant = tenant_of(request.user)
-        employee = Employee.objects.filter(
-            pk=request.data.get("employee"), tenant=tenant
-        ).first()
+        employee = _tenant_fk(Employee, tenant, request.data.get("employee"))
         if not employee:
             return Response({"errors": {"employee": "Choose an employee."}}, status=400)
         try:
@@ -3332,9 +3373,7 @@ class HrAssetIssueView(APIView):
             return Response(
                 {"errors": {"message": "This asset is already issued."}}, status=400
             )
-        employee = Employee.objects.filter(
-            pk=request.data.get("employee"), tenant=tenant
-        ).first()
+        employee = _tenant_fk(Employee, tenant, request.data.get("employee"))
         if not employee:
             return Response(
                 {"errors": {"employee": "Select the employee."}}, status=400
