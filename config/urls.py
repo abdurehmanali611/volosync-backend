@@ -12,6 +12,7 @@ urlpatterns = [
     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/user/", include("user.urls")),
     path("api/tenants/", include("tenants.urls")),
+    path("api/apex-chat/", include("apexchat.urls")),
     path("api/inventory/", include("inventory.urls")),
     path("api/sales/", include("sales.urls")),
     path("api/assets/", include("assets.urls")),

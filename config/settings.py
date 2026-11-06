@@ -23,6 +23,8 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "user",
     "tenants",
+    # Mirrors the console's chat tables; ships no migrations on purpose.
+    "apexchat",
     "approvals",
     "inventory",
     "sales",
