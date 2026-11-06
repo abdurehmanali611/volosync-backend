@@ -85,8 +85,17 @@ class StockLot(models.Model):
 
     @property
     def paid_amount(self):
-        base = self.quantity * self.unit_cost
-        return (base + base * self.vat_rate / 100).quantize(Decimal("0.01"))
+        # The registered unit cost already carries VAT, so nothing is added on top.
+        return (self.quantity * self.unit_cost).quantize(Decimal("0.01"))
+
+    @property
+    def input_vat(self):
+        """VAT already inside the registered purchase."""
+        if self.vat_rate <= 0:
+            return Decimal("0.00")
+        return (
+            self.quantity * self.unit_cost * self.vat_rate / (100 + self.vat_rate)
+        ).quantize(Decimal("0.01"))
 
     @property
     def stocked_out_quantity(self):
@@ -225,9 +234,8 @@ class RegistrationLine(models.Model):
 
     @property
     def paid_amount(self):
-        return (self.quantity * self.unit_cost * (1 + self.vat_rate / 100)).quantize(
-            Decimal("0.01")
-        )
+        # The registered unit cost already carries VAT, so nothing is added on top.
+        return (self.quantity * self.unit_cost).quantize(Decimal("0.01"))
 
     @property
     def total_cost(self):

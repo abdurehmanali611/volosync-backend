@@ -182,12 +182,13 @@ class InventorySummaryView(APIView):
     """Payment & tax: registered vs in store vs stocked out, VAT split.
 
     Serves both the Store and the Finance Payment & tax screens.
+    Registration has no VAT switch: the unit cost and the selling price are
+    both entered VAT-inclusive, so input and output VAT are read back out of
+    those amounts at ``rate / (100 + rate)``.
     ``?tab=all|with_vat|without_vat`` filters on the computed input VAT per
-    row: with_vat = lots where vat_amount > 0, without_vat = lots registered
-    at a 0% rate (registration already accepts a per-line vat_rate override,
-    so zero-rated lots exist as soon as one is registered).
-    Output VAT is the VAT on the stocked-out portion, estimated at the lot's
-    current unit_sales price.
+    row; only lots registered at a 0% rate land in ``without_vat``.
+    Output VAT is the VAT inside the stocked-out portion, estimated at the
+    lot's current unit_sales price.
     """
 
     def get(self, request):
@@ -201,9 +202,9 @@ class InventorySummaryView(APIView):
             stocked_out_value = registered_value - in_store_value
             paid_amount = lot.paid_amount
             base_value = registered_value
-            vat_amount = paid_amount - base_value
+            vat_amount = lot.input_vat
             output_vat = (
-                stocked_out_quantity * lot.unit_sales * lot.vat_rate / 100
+                stocked_out_quantity * lot.unit_sales * lot.vat_rate / (100 + lot.vat_rate)
             ).quantize(Decimal("0.01"))
             rows.append(
                 {
