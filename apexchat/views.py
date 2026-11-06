@@ -66,7 +66,7 @@ def _payload(thread):
 
 
 class ApexChatView(APIView):
-    """GET the thread, POST {"body": …} to reply, PATCH {"action": "read"} to ack."""
+    """GET the thread, POST {"body": …, "image_url": …} to reply, PATCH {"action": "read"} to ack."""
 
     def get(self, request):
         tenant, denied = _tenant(request)
@@ -80,7 +80,8 @@ class ApexChatView(APIView):
         if denied:
             return denied
         body = (request.data.get("body") or "").strip()
-        if not body:
+        image_url = (request.data.get("image_url") or "").strip()[:2048]
+        if not body and not image_url:
             return _denied("Write something first.", status.HTTP_400_BAD_REQUEST)
         thread = ApexChatThread.objects.filter(tenant=tenant).first()
         if thread is None:
@@ -100,7 +101,7 @@ class ApexChatView(APIView):
             thread=thread,
             side="TENANT",
             body=body,
-            image_url=(request.data.get("image_url") or "").strip()[:2048],
+            image_url=image_url,
             actor=request.user,
         )
         thread.save(update_fields=["updated_at"])
