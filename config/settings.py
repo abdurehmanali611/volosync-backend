@@ -25,6 +25,8 @@ INSTALLED_APPS = [
     "tenants",
     # Mirrors the console's chat tables; ships no migrations on purpose.
     "apexchat",
+    # Mirrors the console's yearly billing columns; also migration-free.
+    "billing",
     "approvals",
     "inventory",
     "sales",
@@ -93,7 +95,9 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # JWT auth + the yearly subscription gate, so a token issued before a
+        # trial/year ended cannot keep calling workspace endpoints.
+        "billing.authentication.SubscriptionAwareJWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),

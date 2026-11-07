@@ -7,6 +7,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed, Throttled
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from billing.access import tenant_access
 from sales.models import SalesAgent
 
 from .models import LoginAttempt, Profile
@@ -89,10 +90,18 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     raise AuthenticationFailed(
                         detail="Sales is switched off for this tenant."
                     )
+            # Yearly billing gate. The credentials were right, so a denial here
+            # is not a failed attempt and must not feed the lockout counter.
+            access = tenant_access(
+                profile.tenant_id if profile else None,
+                profile.role if profile else "",
+            )
+            if not access["allowed"]:
+                raise AuthenticationFailed(detail=access["message"])
             LoginAttempt.objects.create(
                 username=username, ip=ip, success=True, kind="STAFF"
             )
-            return self._success_data()
+            return self._success_data(access)
 
         # 2. Sales agent path — only tenants with the sales role enabled.
         agent, kind = self._match_agent(username, password)
@@ -111,10 +120,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 defaults={"tenant": agent.tenant, "role": "SALES"},
             )
             self.user = agent.user
+            access = tenant_access(agent.tenant_id, "SALES")
+            if not access["allowed"]:
+                raise AuthenticationFailed(detail=access["message"])
             LoginAttempt.objects.create(
                 username=username, ip=ip, success=True, kind="AGENT", agent=agent
             )
-            data = self._success_data()
+            data = self._success_data(access)
             data["user"] = {
                 "id": agent.user_id,
                 "username": agent.user.username,
@@ -148,7 +160,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 match = match or agent
         return match, ("AGENT" if candidates else "STAFF")
 
-    def _success_data(self):
+    def _success_data(self, access=None):
         refresh = self.get_token(self.user)
         data = {"refresh": str(refresh), "access": str(refresh.access_token)}
         profile = getattr(self.user, "profile", None)
@@ -161,6 +173,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "tenant_id": profile.tenant_id if profile else None,
             "must_change_password": profile.must_change_password if profile else False,
         }
+        # An ended subscription still hands the manager a token, but only for
+        # the payment portal; every other role was denied above.
+        data["access_mode"] = access["access_mode"] if access else "full"
+        data["payment_kind"] = access["payment_kind"] if access else None
+        data["access_message"] = access["message"] if access else ""
         return data
 
 

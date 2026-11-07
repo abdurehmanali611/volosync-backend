@@ -1,11 +1,12 @@
 from django.urls import path
 
+from billing.views import TenantPaymentSubmitView, TenantSubscriptionView
+
 from .views import (
     BranchCreateView,
     TenantDetailView,
     TenantListView,
     TenantMeView,
-    TenantSubscriptionView,
 )
 
 urlpatterns = [
@@ -14,4 +15,5 @@ urlpatterns = [
     path("<int:pk>/branches/", BranchCreateView.as_view()),
     path("me/", TenantMeView.as_view()),
     path("subscription/", TenantSubscriptionView.as_view()),
+    path("subscription/payment/", TenantPaymentSubmitView.as_view()),
 ]
