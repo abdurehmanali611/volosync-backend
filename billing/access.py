@@ -47,6 +47,15 @@ def period_status(row, today=None, payment_pending=False):
     if row.billing_hold:
         return "on_hold"
 
+    # An active free trial is the current billing window: it governs access and
+    # its own 10-day warning, even when the row also carries the yearly renewal
+    # date the console stamps at signup. Mirrors lib/subscriptionQuarter.ts and
+    # the console's billing_state.
+    if row.free_trial_ends_on:
+        trial_left = (row.free_trial_ends_on - today).days
+        if trial_left >= 0:
+            return "trial_ending" if trial_left <= TRIAL_WARNING_DAYS else "trial"
+
     if row.subscription_expires_on:
         left = (row.subscription_expires_on - today).days
         if left < 0:
@@ -54,10 +63,9 @@ def period_status(row, today=None, payment_pending=False):
         return "warning" if left <= SUBSCRIPTION_WARNING_DAYS else "active"
 
     if row.free_trial_ends_on:
-        left = (row.free_trial_ends_on - today).days
-        if left < 0:
-            return "pending_approval" if payment_pending else "trial_expired"
-        return "trial_ending" if left <= TRIAL_WARNING_DAYS else "trial"
+        # Trial ended with no paid year on record. An approved renewal writes a
+        # future subscription_expires_on, so it never reaches this branch.
+        return "pending_approval" if payment_pending else "trial_expired"
 
     # Neither a trial nor a paid year on record: nothing to enforce yet.
     return "exempt"
