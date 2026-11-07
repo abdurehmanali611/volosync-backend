@@ -1,5 +1,7 @@
 from decimal import Decimal, InvalidOperation
 
+from django.core.cache import cache
+from django.db import connection
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -17,6 +19,46 @@ from .access import (
 from .models import SubscriptionPayment, TenantBilling
 
 CHANNELS = {"TELEBIRR", "BANK", "CASH", "OTHER"}
+
+_SETUP_FEE_COLUMN_CACHE_KEY = "billing:tenants_tenant:has_setup_fee"
+
+
+def _tenants_table_has_setup_fee() -> bool:
+    """True once the console adds the setup_fee column to tenants_tenant.
+
+    The console owns the DDL, so the column may not exist yet; check it once
+    per cache lifetime instead of breaking every snapshot query on a schema
+    that predates the column.
+    """
+    cached = cache.get(_SETUP_FEE_COLUMN_CACHE_KEY)
+    if cached is not None:
+        return bool(cached)
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT 1 FROM information_schema.COLUMNS "
+            "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s "
+            "AND COLUMN_NAME = 'setup_fee' LIMIT 1",
+            ["tenants_tenant"],
+        )
+        has_column = cursor.fetchone() is not None
+    cache.set(_SETUP_FEE_COLUMN_CACHE_KEY, has_column, 3600)
+    return has_column
+
+
+def tenant_setup_fee(tenant_id) -> Decimal:
+    """The console's one-time setup fee; zero until the column exists.
+
+    A free-trial payment charges this fee; a yearly renewal keeps charging
+    the yearly fee, so the two amounts can never mix.
+    """
+    if not tenant_id or not _tenants_table_has_setup_fee():
+        return Decimal("0.00")
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT setup_fee FROM tenants_tenant WHERE id = %s", [tenant_id]
+        )
+        row = cursor.fetchone()
+    return Decimal(str(row[0])) if row and row[0] is not None else Decimal("0.00")
 
 
 def _denied(message, code=status.HTTP_403_FORBIDDEN):
@@ -59,14 +101,23 @@ class TenantSubscriptionView(APIView):
             modules.append("HR Module")
 
         annual_fee = row.annual_fee if row else Decimal("0.00")
+        setup_fee = tenant_setup_fee(tenant.pk)
         trial_end = row.free_trial_ends_on if row else None
         paid_until = row.subscription_expires_on if row else None
+        # A free-trial payment charges the setup fee; every other state asks
+        # for the yearly fee. Mirrors the portal page's amount logic.
+        trial_fee_applies = state in ("trial", "trial_ending", "trial_expired")
+        amount_due = (
+            setup_fee
+            if trial_fee_applies and setup_fee > 0
+            else annual_fee
+        )
 
         return Response(
             {
                 "data": {
                     "modules": modules,
-                    "setupFeeETB": 0,
+                    "setupFeeETB": float(setup_fee),
                     "quarterlyFeeETB": 0,
                     "annualFeeETB": float(annual_fee),
                     "setupFeeApproved": True,
@@ -95,7 +146,7 @@ class TenantSubscriptionView(APIView):
                     "subscriptionDaysLeft": (paid_until - today).days
                     if paid_until
                     else None,
-                    "amountDueETB": float(annual_fee),
+                    "amountDueETB": float(amount_due),
                     "pendingPayment": {
                         "id": pending.id,
                         "transactionRef": pending.transaction_id,
@@ -172,15 +223,23 @@ class TenantPaymentSubmitView(APIView):
 
         row = TenantBilling.objects.filter(pk=tenant.pk).first()
         annual_fee = row.annual_fee if row else Decimal("0.00")
+        today = timezone.localdate()
         # The fee is the console's price, never a number the browser supplies.
-        amount = (annual_fee * years).quantize(Decimal("0.01"))
+        # A free-trial payment is the one-time setup fee (years do not
+        # multiply it); any other state charges the yearly fee.
+        state = period_status(row, today)
+        setup_fee = tenant_setup_fee(tenant.pk)
+        if state in ("trial", "trial_ending", "trial_expired") and setup_fee > 0:
+            amount = setup_fee
+            years = 1
+        else:
+            amount = (annual_fee * years).quantize(Decimal("0.01"))
         if amount <= 0:
             return _denied(
-                "No yearly fee is set for this wholesaler yet. Contact Apex.",
+                "No fee is set for this wholesaler yet. Contact Apex.",
                 status.HTTP_400_BAD_REQUEST,
             )
 
-        today = timezone.localdate()
         payment = SubscriptionPayment.objects.create(
             tenant_id=tenant.pk,
             transaction_id=reference,
