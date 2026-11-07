@@ -16,6 +16,11 @@ class TenantBilling(models.Model):
     annual_fee = models.DecimalField(
         max_digits=14, decimal_places=2, default=Decimal("0.00")
     )
+    # One-time onboarding fee the free-trial payment asks for; NULL/zero means
+    # the console has not set one and the portal falls back to the yearly fee.
+    setup_fee = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True
+    )
     account_status = models.CharField(max_length=20, default="ACTIVE")
     is_illustration = models.BooleanField(default=False)
     billing_hold = models.BooleanField(default=False)
