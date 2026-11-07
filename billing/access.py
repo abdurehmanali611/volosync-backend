@@ -22,7 +22,7 @@ ALLOWED_STATUSES = {"exempt", "on_hold", "trial", "trial_ending", "active", "war
 
 BLOCK_MESSAGES = {
     "restricted": "This wholesaler account is restricted. Contact Apex to restore access.",
-    "trial_expired": "Your subscription is ended.",
+    "trial_expired": "Your free trial has ended.",
     "expired": "Your subscription is ended.",
     "pending_approval": "Your payment is awaiting Apex verification.",
 }
