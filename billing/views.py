@@ -62,14 +62,12 @@ class TenantSubscriptionView(APIView):
         setup_fee = (row.setup_fee if row else None) or Decimal("0.00")
         trial_end = row.free_trial_ends_on if row else None
         paid_until = row.subscription_expires_on if row else None
-        # A free-trial payment charges the setup fee; every other state asks
-        # for the yearly fee. Mirrors the portal page's amount logic.
+        # A free-trial payment charges ONLY the setup fee; every other state
+        # charges ONLY the yearly fee. A missing fee stays at zero — it is
+        # never replaced with the other fee, so the portal can show a clear
+        # "Apex has not set this fee yet" warning instead of a wrong amount.
         trial_fee_applies = state in ("trial", "trial_ending", "trial_expired")
-        amount_due = (
-            setup_fee
-            if trial_fee_applies and setup_fee > 0
-            else annual_fee
-        )
+        amount_due = setup_fee if trial_fee_applies else annual_fee
 
         return Response(
             {
@@ -185,16 +183,19 @@ class TenantPaymentSubmitView(APIView):
         today = timezone.localdate()
         # The fee is the console's price, never a number the browser supplies.
         # A free-trial payment is the one-time setup fee (years do not
-        # multiply it); any other state charges the yearly fee.
+        # multiply it); any other state charges the yearly fee. A fee that the
+        # console has not set is never replaced with the other fee.
         state = period_status(row, today)
-        if state in ("trial", "trial_ending", "trial_expired") and setup_fee > 0:
+        trial_fee_applies = state in ("trial", "trial_ending", "trial_expired")
+        if trial_fee_applies:
             amount = setup_fee
             years = 1
         else:
             amount = (annual_fee * years).quantize(Decimal("0.01"))
         if amount <= 0:
+            fee_name = "setup fee" if trial_fee_applies else "yearly fee"
             return _denied(
-                "No fee is set for this wholesaler yet. Contact Apex.",
+                f"Apex has not set the {fee_name} for this wholesaler yet.",
                 status.HTTP_400_BAD_REQUEST,
             )
 
