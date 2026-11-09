@@ -12,6 +12,7 @@ from .access import (
     TRIAL_WARNING_DAYS,
     period_status,
     prospective_cover_until,
+    setup_submission_outstanding,
     tenant_access,
 )
 from .models import SubscriptionPayment, TenantBilling
@@ -50,6 +51,8 @@ class TenantSubscriptionView(APIView):
         )
         today = timezone.localdate()
         state = period_status(row, today, payment_pending=pending is not None)
+        if state == "exempt" and setup_submission_outstanding(tenant.pk):
+            state = "setup_pending"
         access = tenant_access(tenant.pk, role)
 
         modules = ["Credentials(Common)"]

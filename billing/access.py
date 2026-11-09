@@ -25,6 +25,11 @@ BLOCK_MESSAGES = {
     "trial_expired": "Your free trial has ended.",
     "expired": "Your subscription is ended.",
     "pending_approval": "Your payment is awaiting Apex verification.",
+    "setup_pending": (
+        "Your registration is pending Apex approval. Login is disabled until "
+        "your setup payment is verified. For help, contact Apex on WhatsApp: "
+        "+251935000642 or +251930272975."
+    ),
 }
 
 
@@ -71,6 +76,17 @@ def period_status(row, today=None, payment_pending=False):
     return "exempt"
 
 
+def setup_submission_outstanding(tenant_id) -> bool:
+    """True when the console's setup queue holds a row for this tenant.
+
+    Imported lazily — the signup mirrors live in the tenants app and must not
+    create an import cycle with billing.
+    """
+    from tenants.signup import latest_setup_payment
+
+    return latest_setup_payment(tenant_id) is not None
+
+
 def tenant_access(tenant_id, role):
     """Login verdict for a staff role on a tenant."""
     if not tenant_id:
@@ -87,6 +103,12 @@ def tenant_access(tenant_id, role):
         tenant_id=tenant_id, status="PENDING"
     ).exists()
     status = period_status(row, payment_pending=pending)
+
+    # A self-signup waits for Apex before anyone can log in. It has no active
+    # paid year and no trial, so without a setup submission in the console's
+    # queue the status would read "exempt" and slip straight through.
+    if status == "exempt" and setup_submission_outstanding(tenant_id):
+        status = "setup_pending"
 
     if status in ALLOWED_STATUSES:
         return {

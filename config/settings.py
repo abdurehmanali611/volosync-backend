@@ -101,6 +101,7 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
+    "DEFAULT_THROTTLE_RATES": {"signup": "30/hour"},
     "EXCEPTION_HANDLER": "config.exceptions.envelope_exception_handler",
 }
 
