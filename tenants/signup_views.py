@@ -95,10 +95,10 @@ class SignupPricingView(APIView):
         inventory = str(request.query_params.get("inventory", "1")) not in ("0", "false")
         hr = str(request.query_params.get("hr", "1")) not in ("0", "false")
         sales = str(request.query_params.get("sales", "0")) not in ("0", "false")
-        setup_fee, yearly_fee = quoted_fees(inventory, hr, sales)
-        if setup_fee is None:
+        setup_fee, yearly_fee, plan = quoted_fees(inventory, hr, sales)
+        if setup_fee is None or plan is None:
             return _denied(
-                "No pricing plan is set yet. Contact Apex to have one applied.",
+                "The pricing catalog is empty. Contact Apex to have one applied.",
                 http_status.HTTP_404_NOT_FOUND,
             )
         return Response(
@@ -106,6 +106,7 @@ class SignupPricingView(APIView):
                 "data": {
                     "setupFeeETB": float(setup_fee),
                     "yearlyFeeETB": float(yearly_fee),
+                    "planName": plan.name,
                 }
             }
         )
@@ -166,10 +167,10 @@ class SignupView(APIView):
         if sales and not inventory:
             return _denied("The Sales Role requires the Inventory module.")
 
-        setup_fee, yearly_fee = quoted_fees(inventory, hr, sales)
-        if setup_fee is None:
+        setup_fee, yearly_fee, plan = quoted_fees(inventory, hr, sales)
+        if setup_fee is None or plan is None:
             return _denied(
-                "No pricing plan is set yet. Contact Apex to have one applied.",
+                "The pricing catalog is empty. Contact Apex to have one applied.",
                 http_status.HTTP_404_NOT_FOUND,
             )
         if setup_fee <= 0:
@@ -336,14 +337,14 @@ class SignupResubmitView(APIView):
 
         # The quoted fee may have changed since the signup; price from the
         # catalog again so the queue row matches what Apex expects.
-        setup_fee, _yearly = quoted_fees(
+        setup_fee, _yearly, _plan = quoted_fees(
             tenant.module_inventory,
             tenant.module_hr,
             tenant.sales_role_enabled,
         )
-        if setup_fee is None or setup_fee <= 0:
+        if setup_fee is None or _plan is None:
             return _denied(
-                "Apex has not set a setup fee for new signups yet. Contact Apex."
+                "The pricing catalog is empty. Contact Apex to have one applied."
             )
         now = timezone.now()
         SetupPayment.objects.create(

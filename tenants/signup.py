@@ -108,15 +108,42 @@ def default_pricing_plan():
     return PricingPlan.objects.filter(is_default=True, active=True).first()
 
 
-def quoted_fees(inventory: bool, hr: bool, sales: bool = False):
-    """(setup_fee, yearly_fee) from the default active plan.
+def _plan_modules(plan) -> list:
+    """The module mix a catalog plan prices — mirrors the console's own
+    derivation (a module is covered when its yearly fee is set)."""
+    mods = []
+    if plan.inventory_yearly_fee > 0:
+        mods.append("Inventory")
+    if plan.hr_yearly_fee > 0:
+        mods.append("HR Module")
+    if plan.sales_role_yearly_fee > 0:
+        mods.append("Sales Role")
+    return mods
 
-    Mirrors the console's suggest_fees: base + each switched-on module fee.
-    Returns (None, None) when there is no default active plan.
+
+def quoted_fees(inventory: bool, hr: bool, sales: bool = False):
+    """(setup_fee, yearly_fee, plan) for the checked module mix.
+
+    The catalog plans are per-module-mix prices customized by Apex: an exact
+    match on the checked modules wins (its setup and yearly fees are the
+    price). Without an exact match, the first active plan prices the base and
+    each checked module is added on top. Returns (None, None, None) when the
+    catalog is empty.
     """
-    plan = default_pricing_plan()
-    if plan is None:
-        return None, None
+    plans = list(PricingPlan.objects.filter(active=True).order_by("id"))
+    if not plans:
+        return None, None, None
+    wanted = {
+        "Inventory" if inventory else None,
+        "HR Module" if hr else None,
+        "Sales Role" if sales else None,
+    } - {None}
+    exact = next(
+        (p for p in plans if set(_plan_modules(p)) == wanted), None
+    )
+    if exact is not None:
+        return exact.setup_fee, exact.yearly_base_fee, exact
+    plan = next((p for p in plans if p.is_default), plans[0])
     yearly = plan.yearly_base_fee
     if inventory:
         yearly += plan.inventory_yearly_fee
@@ -124,7 +151,7 @@ def quoted_fees(inventory: bool, hr: bool, sales: bool = False):
         yearly += plan.hr_yearly_fee
     if sales:
         yearly += plan.sales_role_yearly_fee
-    return plan.setup_fee, yearly
+    return plan.setup_fee, yearly, plan
 
 
 def latest_setup_payment(tenant_id):
