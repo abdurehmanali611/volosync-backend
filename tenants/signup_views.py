@@ -94,7 +94,8 @@ class SignupPricingView(APIView):
     def get(self, request):
         inventory = str(request.query_params.get("inventory", "1")) not in ("0", "false")
         hr = str(request.query_params.get("hr", "1")) not in ("0", "false")
-        setup_fee, yearly_fee = quoted_fees(inventory, hr)
+        sales = str(request.query_params.get("sales", "0")) not in ("0", "false")
+        setup_fee, yearly_fee = quoted_fees(inventory, hr, sales)
         if setup_fee is None:
             return _denied(
                 "No pricing plan is set yet. Contact Apex to have one applied.",
@@ -137,6 +138,7 @@ class SignupView(APIView):
         sales_agent_id = payload.get("sales_agent_id")
         inventory = bool(payload.get("module_inventory", True))
         hr = bool(payload.get("module_hr", True))
+        sales = bool(payload.get("sales_role_enabled", False))
 
         if len(name) < 2:
             return _denied("Enter the registered business name.")
@@ -159,7 +161,12 @@ class SignupView(APIView):
         if Tenant.objects.filter(tin__iexact=tin).exists():
             return _denied("That TIN is already registered.")
 
-        setup_fee, yearly_fee = quoted_fees(inventory, hr)
+        # The Sales Role is an add-on to Inventory: it cannot be checked
+        # without it (the mirror of the console's tenant-creation form).
+        if sales and not inventory:
+            return _denied("The Sales Role requires the Inventory module.")
+
+        setup_fee, yearly_fee = quoted_fees(inventory, hr, sales)
         if setup_fee is None:
             return _denied(
                 "No pricing plan is set yet. Contact Apex to have one applied.",
@@ -191,7 +198,7 @@ class SignupView(APIView):
                     logo_url=logo_url,
                     module_inventory=inventory,
                     module_hr=hr,
-                    sales_role_enabled=False,
+                    sales_role_enabled=sales,
                     is_main=True,
                 )
                 # Console-owned columns volosync's Tenant model does not carry:
@@ -330,7 +337,9 @@ class SignupResubmitView(APIView):
         # The quoted fee may have changed since the signup; price from the
         # catalog again so the queue row matches what Apex expects.
         setup_fee, _yearly = quoted_fees(
-            tenant.module_inventory, tenant.module_hr
+            tenant.module_inventory,
+            tenant.module_hr,
+            tenant.sales_role_enabled,
         )
         if setup_fee is None or setup_fee <= 0:
             return _denied(

@@ -108,7 +108,7 @@ def default_pricing_plan():
     return PricingPlan.objects.filter(is_default=True, active=True).first()
 
 
-def quoted_fees(inventory: bool, hr: bool):
+def quoted_fees(inventory: bool, hr: bool, sales: bool = False):
     """(setup_fee, yearly_fee) from the default active plan.
 
     Mirrors the console's suggest_fees: base + each switched-on module fee.
@@ -122,6 +122,8 @@ def quoted_fees(inventory: bool, hr: bool):
         yearly += plan.inventory_yearly_fee
     if hr:
         yearly += plan.hr_yearly_fee
+    if sales:
+        yearly += plan.sales_role_yearly_fee
     return plan.setup_fee, yearly
 
 
