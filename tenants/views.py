@@ -6,6 +6,9 @@ from rest_framework.views import APIView
 
 from inventory.models import StockLot
 
+from billing.access import family_is_illustration
+from billing.models import TenantBilling
+
 from .models import Tenant
 from .serializers import TenantSerializer
 
@@ -107,7 +110,10 @@ class BranchCreateView(APIView):
             module_hr=parent.module_hr,
             sales_role_enabled=parent.sales_role_enabled,
             parent=parent,
+            logo_url=parent.family_logo_url,
         )
+        if family_is_illustration(TenantBilling.objects.filter(pk=parent.pk).first()):
+            TenantBilling.objects.filter(pk=branch.pk).update(is_illustration=True)
 
         username = (request.data.get("username") or "").strip()
         password = request.data.get("password") or ""

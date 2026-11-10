@@ -2,7 +2,7 @@
 
 Mirrors lib/subscriptionQuarter.ts on the frontend: a free trial warns 10 days
 out, a paid year warns 7 days out, and either one ending blocks the login. There
-is no grace period — an ended subscription stops access the next day.
+is no grace period — a yearly subscription stops access on its final day.
 """
 
 from datetime import timedelta
@@ -41,9 +41,43 @@ def prospective_cover_until(row, years, today=None):
     return start + timedelta(days=YEAR_DAYS * years)
 
 
+def family_is_illustration(row):
+    """Illustration is a company-wide identity: any family member exempts all.
+
+    Branches of an illustration wholesaler never owe a payment, even when the
+    flag sits on the main/root rather than on the branch row itself.
+    """
+    if row is None:
+        return False
+    if row.is_illustration:
+        return True
+    root = row
+    seen = {row.pk}
+    while root.parent_id and root.parent_id not in seen:
+        parent = TenantBilling.objects.filter(pk=root.parent_id).first()
+        if parent is None:
+            break
+        if parent.is_illustration:
+            return True
+        seen.add(parent.pk)
+        root = parent
+    if root.is_illustration:
+        return True
+    frontier = [root.pk]
+    visited = {root.pk}
+    while frontier:
+        children = TenantBilling.objects.filter(parent_id__in=frontier)
+        if children.filter(is_illustration=True).exists():
+            return True
+        ids = list(children.values_list("pk", flat=True))
+        frontier = [pk for pk in ids if pk not in visited]
+        visited.update(frontier)
+    return False
+
+
 def period_status(row, today=None, payment_pending=False):
     today = today or timezone.localdate()
-    if row is None or row.is_illustration:
+    if row is None or family_is_illustration(row):
         return "exempt"
     if row.account_status != "ACTIVE":
         return "restricted"
@@ -63,7 +97,7 @@ def period_status(row, today=None, payment_pending=False):
 
     if row.subscription_expires_on:
         left = (row.subscription_expires_on - today).days
-        if left < 0:
+        if left <= 0:
             return "pending_approval" if payment_pending else "expired"
         return "warning" if left <= SUBSCRIPTION_WARNING_DAYS else "active"
 

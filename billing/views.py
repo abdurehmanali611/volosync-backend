@@ -10,6 +10,7 @@ from .access import (
     PORTAL_ROLES,
     SUBSCRIPTION_WARNING_DAYS,
     TRIAL_WARNING_DAYS,
+    family_is_illustration,
     period_status,
     prospective_cover_until,
     setup_submission_outstanding,
@@ -85,7 +86,7 @@ class TenantSubscriptionView(APIView):
                     else None,
                     "billingStartedAt": None,
                     "billingHold": bool(row and row.billing_hold),
-                    "isIllustrationTenant": bool(row and row.is_illustration),
+                    "isIllustrationTenant": family_is_illustration(row),
                     "accountStatus": row.account_status if row else "ACTIVE",
                     "freeTrialEndsAt": _iso(trial_end),
                     "subscriptionPaidUntil": _iso(paid_until),
@@ -181,6 +182,8 @@ class TenantPaymentSubmitView(APIView):
             return _denied("Pay for 1 to 5 years.", status.HTTP_400_BAD_REQUEST)
 
         row = TenantBilling.objects.filter(pk=tenant.pk).first()
+        if family_is_illustration(row):
+            return _denied("Illustration accounts are exempt from payments.")
         annual_fee = row.annual_fee if row else Decimal("0.00")
         setup_fee = (row.setup_fee if row else None) or Decimal("0.00")
         today = timezone.localdate()

@@ -33,3 +33,27 @@ class Tenant(models.Model):
     @property
     def is_branch(self):
         return self.parent_id is not None
+
+    @property
+    def family_logo_url(self):
+        """One shared logo per family: the main branch's, else any member's.
+
+        Every satellite resolves the company logo so its top bar, sidebar,
+        receipts and PDF prints match the main branch even when the branch row
+        itself never stored a logo.
+        """
+        root = self
+        seen = {self.pk}
+        while root.parent_id and root.parent_id not in seen:
+            parent = Tenant.objects.filter(pk=root.parent_id).first()
+            if parent is None:
+                break
+            seen.add(parent.pk)
+            root = parent
+        members = [root, *root.branches.all()]
+        main = next((member for member in members if member.is_main), None)
+        if main and main.logo_url:
+            return main.logo_url
+        if self.logo_url:
+            return self.logo_url
+        return next((member.logo_url for member in members if member.logo_url), "")

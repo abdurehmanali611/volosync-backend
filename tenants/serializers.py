@@ -4,6 +4,8 @@ from .models import Tenant
 
 
 class TenantSerializer(serializers.ModelSerializer):
+    logo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Tenant
         fields = [
@@ -23,3 +25,6 @@ class TenantSerializer(serializers.ModelSerializer):
             "subscription_transaction_id",
             "subscription_paid_on",
         ]
+
+    def get_logo_url(self, obj):
+        return obj.family_logo_url

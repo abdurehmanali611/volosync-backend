@@ -25,6 +25,8 @@ class TenantBilling(models.Model):
     is_illustration = models.BooleanField(default=False)
     billing_hold = models.BooleanField(default=False)
     free_trial_ends_on = models.DateField(null=True, blank=True)
+    parent_id = models.IntegerField(null=True, blank=True)
+    is_main = models.BooleanField(default=False)
     created_at = models.DateTimeField()
 
     class Meta:
