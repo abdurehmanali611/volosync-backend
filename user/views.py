@@ -145,6 +145,15 @@ class StaffAccessView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if role == "FINANCE" and not tenant.module_inventory:
+            return Response(
+                {
+                    "errors": {
+                        "message": "The Inventory module is not subscribed for this tenant."
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if not username:
             return Response(
                 {"errors": {"message": "A username is required."}},

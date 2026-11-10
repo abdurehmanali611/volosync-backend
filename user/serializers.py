@@ -110,6 +110,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     raise AuthenticationFailed(
                         detail="The Inventory module is not subscribed for this tenant."
                     )
+            if profile is not None and profile.role == "FINANCE":
+                tenant = profile.tenant
+                if not (tenant and tenant.module_inventory):
+                    LoginAttempt.objects.create(
+                        username=username, ip=ip, success=False, kind="STAFF"
+                    )
+                    raise AuthenticationFailed(
+                        detail="The Inventory module is not subscribed for this tenant."
+                    )
             # Yearly billing gate. The credentials were right, so a denial here
             # is not a failed attempt and must not feed the lockout counter.
             access = tenant_access(
