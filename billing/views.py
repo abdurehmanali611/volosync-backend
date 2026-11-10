@@ -52,7 +52,11 @@ class TenantSubscriptionView(APIView):
         )
         today = timezone.localdate()
         state = period_status(row, today, payment_pending=pending is not None)
-        if state == "exempt" and setup_submission_outstanding(tenant.pk):
+        if (
+            state == "exempt"
+            and not family_is_illustration(row)
+            and setup_submission_outstanding(tenant.pk)
+        ):
             state = "setup_pending"
         access = tenant_access(tenant.pk, role)
 

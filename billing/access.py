@@ -141,7 +141,13 @@ def tenant_access(tenant_id, role):
     # A self-signup waits for Apex before anyone can log in. It has no active
     # paid year and no trial, so without a setup submission in the console's
     # queue the status would read "exempt" and slip straight through.
-    if status == "exempt" and setup_submission_outstanding(tenant_id):
+    # Illustration families never wait on setup approval and never owe a
+    # payment, so the override must not pull them back into a gate.
+    if (
+        status == "exempt"
+        and not family_is_illustration(row)
+        and setup_submission_outstanding(tenant_id)
+    ):
         status = "setup_pending"
 
     if status in ALLOWED_STATUSES:
