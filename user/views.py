@@ -116,12 +116,31 @@ class StaffAccessView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         # A switched-off Sales role has no credential to hand out; the role is
-        # enabled per tenant from VoloSync Admin.
+        # enabled per tenant from VoloSync Admin. Same for roles whose module
+        # is not subscribed.
         if role == "SALES" and not tenant.sales_role_enabled:
             return Response(
                 {
                     "errors": {
                         "message": "Sales is switched off for this tenant. Enable it in VoloSync Admin first."
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if role == "HR" and not tenant.module_hr:
+            return Response(
+                {
+                    "errors": {
+                        "message": "The HR module is not subscribed for this tenant."
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if role == "STORE" and not tenant.module_inventory:
+            return Response(
+                {
+                    "errors": {
+                        "message": "The Inventory module is not subscribed for this tenant."
                     }
                 },
                 status=status.HTTP_400_BAD_REQUEST,

@@ -90,6 +90,26 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     raise AuthenticationFailed(
                         detail="Sales is switched off for this tenant."
                     )
+            # Role-module gates: a role whose module is not subscribed has no
+            # login at all — mirrors the sidebar's module filtering.
+            if profile is not None and profile.role == "HR":
+                tenant = profile.tenant
+                if not (tenant and tenant.module_hr):
+                    LoginAttempt.objects.create(
+                        username=username, ip=ip, success=False, kind="STAFF"
+                    )
+                    raise AuthenticationFailed(
+                        detail="The HR module is not subscribed for this tenant."
+                    )
+            if profile is not None and profile.role == "STORE":
+                tenant = profile.tenant
+                if not (tenant and tenant.module_inventory):
+                    LoginAttempt.objects.create(
+                        username=username, ip=ip, success=False, kind="STAFF"
+                    )
+                    raise AuthenticationFailed(
+                        detail="The Inventory module is not subscribed for this tenant."
+                    )
             # Yearly billing gate. The credentials were right, so a denial here
             # is not a failed attempt and must not feed the lockout counter.
             access = tenant_access(
