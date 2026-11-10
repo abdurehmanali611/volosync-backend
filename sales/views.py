@@ -327,14 +327,12 @@ class SalesAgentRankingView(APIView):
                     "penalty_reasons": reasons.get(agent.id, []),
                 }
             )
-        # Standing is decided by the penalty total: the smallest amount of
-        # penalties first, then revenue, then units sold.
+        # Standing is decided by revenue first, then units sold, then penalty amount (less is better).
         data.sort(
             key=lambda row: (
-                Decimal(row["penalty_amount"]),
-                row["has_penalty"],
                 -Decimal(row["revenue"]),
                 -Decimal(row["units_sold"]),
+                Decimal(row["penalty_amount"]),
             )
         )
         # Competition ranking: identical scores share a rank and the next
