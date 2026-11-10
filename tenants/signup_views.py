@@ -193,29 +193,49 @@ class SignupView(APIView):
                 # Lock the identities before anything is written.
                 if User.objects.filter(username__iexact=username).exists():
                     return _denied("That username is already taken.")
-                tenant = Tenant.objects.create(
-                    name=name,
-                    tin=tin,
-                    logo_url=logo_url,
-                    module_inventory=inventory,
-                    module_hr=hr,
-                    sales_role_enabled=sales,
-                    is_main=True,
-                )
-                # Console-owned columns volosync's Tenant model does not carry:
-                # attribution + the catalog-priced fees (fees stay auto-priced).
+                # Raw INSERT: volosync's Tenant model only mirrors a slice of
+                # the console-owned tenants_tenant columns, and several of the
+                # remaining NOT NULL columns (annual_fee, account_status, ...)
+                # have no database default — an ORM insert through the narrow
+                # model fails with MySQL 1364. Every column is provided here,
+                # using the console model's defaults.
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "UPDATE tenants_tenant SET sales_agent_id = %s, "
-                        "annual_fee = %s, setup_fee = %s, fees_manually_set = 0 "
-                        "WHERE id = %s",
+                        """
+                        INSERT INTO tenants_tenant
+                            (name, tin, phone, address, logo_url, vat_rate,
+                             module_inventory, module_hr, sales_role_enabled,
+                             is_main, subscription_expires_on, created_at,
+                             subscription_paid_on, subscription_transaction_id,
+                             subscription_note, annual_fee, sales_agent_id,
+                             account_status, banned_reason, billing_hold,
+                             billing_hold_note, deleted_reason,
+                             fees_manually_set, is_illustration,
+                             suspended_reason, setup_fee)
+                        VALUES
+                            (%s, %s, '', '', %s, 15.00,
+                             %s, %s, %s,
+                             1, NULL, %s,
+                             NULL, '', '', %s, %s,
+                             'ACTIVE', '', 0,
+                             '', '',
+                             0, 0,
+                             '', %s)
+                        """,
                         [
-                            sales_agent.id if sales_agent else None,
+                            name,
+                            tin,
+                            logo_url,
+                            1 if inventory else 0,
+                            1 if hr else 0,
+                            1 if sales else 0,
+                            now,
                             yearly_fee,
+                            sales_agent.id if sales_agent else None,
                             setup_fee,
-                            tenant.pk,
                         ],
                     )
+                    tenant_id = cursor.lastrowid
                 user = User.objects.create_user(
                     username=username,
                     email="",
@@ -223,12 +243,29 @@ class SignupView(APIView):
                     first_name=_clean(payload.get("first_name"), 80),
                     last_name=_clean(payload.get("last_name"), 80),
                 )
-                user.profile  # noqa: B018 — Profile is created by the console-side signal if any
                 from user.models import Profile
 
-                Profile.objects.create(user=user, tenant=tenant, role="MANAGER")
+                # Raw INSERT: the console's user_profile carries NOT NULL
+                # columns volosync's Profile model does not mirror
+                # (login_disabled*), and they have no database default.
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        INSERT INTO user_profile
+                            (user_id, tenant_id, role, phone,
+                             must_change_password, created_at,
+                             access_password_used, login_disabled,
+                             login_disabled_reason)
+                        VALUES
+                            (%s, %s, 'MANAGER', '',
+                             0, %s,
+                             0, 0,
+                             '')
+                        """,
+                        [user.id, tenant_id, now],
+                    )
                 SetupPayment.objects.create(
-                    tenant_id=tenant.pk,
+                    tenant_id=tenant_id,
                     amount=setup_fee,
                     transaction_ref=reference,
                     channel=channel,
@@ -248,8 +285,8 @@ class SignupView(APIView):
         return Response(
             {
                 "data": {
-                    "tenant": tenant.name,
-                    "tin": tenant.tin,
+                    "tenant": name,
+                    "tin": tin,
                     "username": username,
                     "status": "pending",
                     "message": SETUP_WAIT_COPY,
