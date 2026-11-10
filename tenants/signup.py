@@ -108,9 +108,35 @@ def default_pricing_plan():
     return PricingPlan.objects.filter(is_default=True, active=True).first()
 
 
+def _modules_from_plan_name(name) -> list | None:
+    """Port of the console's modulesFromPlanName: Apex auto-names plans from
+    their module mix ("Standard plan", "Basic plan", ...), so the name is
+    the authoritative module encoding."""
+    value = str(name or "").strip()
+    if not value:
+        return None
+    if value == "Base package":
+        return []
+    if value == "Standard plan":
+        return ["Inventory", "HR Module"]
+    if value == "Basic plan":
+        return ["Inventory", "Sales Role"]
+    if value == "Complete plan":
+        return ["Inventory", "HR Module", "Sales Role"]
+    known = [
+        part.strip()
+        for part in value.split("+")
+        if part.strip() in {"Inventory", "HR Module", "Sales Role"}
+    ]
+    return known or None
+
+
 def _plan_modules(plan) -> list:
-    """The module mix a catalog plan prices — mirrors the console's own
-    derivation (a module is covered when its yearly fee is set)."""
+    """The module mix a catalog plan prices — the console encodes it in the
+    plan name first, and falls back to which yearly fees are set."""
+    named = _modules_from_plan_name(plan.name)
+    if named is not None:
+        return named
     mods = []
     if plan.inventory_yearly_fee > 0:
         mods.append("Inventory")
