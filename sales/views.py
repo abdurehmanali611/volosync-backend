@@ -340,7 +340,7 @@ class SalesAgentRankingView(APIView):
         previous_key = None
         previous_rank = 0
         for index, row in enumerate(data, start=1):
-            key = (row["penalty_amount"], row["has_penalty"], row["revenue"], row["units_sold"])
+            key = (row["revenue"], row["units_sold"], row["penalty_amount"])
             if key != previous_key:
                 previous_rank = index
                 previous_key = key
