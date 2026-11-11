@@ -167,12 +167,16 @@ class StockAssignmentSerializer(serializers.ModelSerializer):
             "unit_sales_at_assignment",
         ]
         read_only_fields = ["unit_sales_at_assignment"]
+        extra_kwargs = {
+            "sales_agent": {"required": True},
+        }
 
     def validate(self, attrs):
         lot = attrs.get("lot")
         quantity = attrs.get("quantity") or Decimal("0")
         changing = attrs.get("changing_amount") or Decimal("0")
         reason = attrs.get("change_reason", "")
+        sales_agent = attrs.get("sales_agent")
 
         if quantity <= 0:
             raise serializers.ValidationError({"quantity": "Quantity must be greater than zero."})
@@ -188,6 +192,12 @@ class StockAssignmentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"changing_amount": "The effective price must stay above zero."}
             )
+        if not sales_agent:
+            raise serializers.ValidationError({"sales_agent": "A sales agent must be selected."})
+        if sales_agent.tenant != lot.tenant:
+            raise serializers.ValidationError({"sales_agent": "Sales agent does not belong to this tenant."})
+        if not sales_agent.is_active:
+            raise serializers.ValidationError({"sales_agent": "Selected sales agent is not active."})
         return attrs
 
 
